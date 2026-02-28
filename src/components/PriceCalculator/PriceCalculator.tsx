@@ -8,9 +8,10 @@ const PriceCalculator = () => {
     {
       price: 0,
       quantity: 0,
-      total: 0,
     }
   );
+
+  const total = calculatorState.price * calculatorState.quantity;
 
   return (
     <div className="flex justify-center items-center gap-2 bg-gray-700 text-gray-200 p-2 rounded-2xl">
@@ -30,7 +31,6 @@ const PriceCalculator = () => {
           setCalculatorState((prev) => ({
             ...prev,
             price: nextPrice,
-            total: nextPrice * prev.quantity,
           }));
         }}
         onKeyDown={(e) => {
@@ -54,7 +54,6 @@ const PriceCalculator = () => {
           setCalculatorState((prev) => ({
             ...prev,
             quantity: nextQuantity,
-            total: prev.price * nextQuantity,
           }));
         }}
         onKeyDown={(e) => {
@@ -63,14 +62,13 @@ const PriceCalculator = () => {
           }
         }}
       />
-      <p className="text-base font-bold">Total: {calculatorState.total}</p>
+      <p className="text-base font-bold">Total: {total.toLocaleString()}</p>
       <button
         className="text-base text-black text-center p-2 rounded-md w-20 border-2 border-gray-500 bg-gray-400 hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
         onClick={() => {
           setCalculatorState({
             price: 0,
             quantity: 0,
-            total: 0,
           });
         }}
       >
