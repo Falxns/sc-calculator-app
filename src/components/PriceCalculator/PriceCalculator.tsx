@@ -14,9 +14,13 @@ const PriceCalculator = () => {
   const total = calculatorState.price * calculatorState.quantity;
 
   return (
-    <div className="flex justify-center items-center gap-2 bg-gray-700 text-gray-200 p-2 rounded-2xl">
+    <section className="flex justify-center items-center gap-2 bg-gray-700 text-gray-200 p-2 rounded-2xl">
       <img src={slastena} alt="Slastena" className="w-16 h-16" />
+      <label className="text-base font-bold text-gray-200" htmlFor="price">
+        Price
+      </label>
       <input
+        id="price"
         className="text-base text-black text-center p-2 rounded-md w-24 border-2 border-gray-500 bg-gray-400 hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-500"
         type="number"
         value={calculatorState.price === 0 ? '' : calculatorState.price}
@@ -24,7 +28,6 @@ const PriceCalculator = () => {
         onChange={(e) => {
           const raw = e.target.value;
           if (raw.includes('-') || raw.includes('+') || raw.includes('e') || raw.includes('E')) {
-            e.preventDefault();
             return;
           }
           const nextPrice = raw === '' ? 0 : Number(raw);
@@ -39,7 +42,11 @@ const PriceCalculator = () => {
           }
         }}
       />
+      <label className="text-base font-bold text-gray-200" htmlFor="quantity">
+        Quantity
+      </label>
       <input
+        id="quantity"
         className="text-base text-black text-center p-2 rounded-md w-24 border-2 border-gray-500 bg-gray-400 hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-500"
         type="number"
         value={calculatorState.quantity === 0 ? '' : calculatorState.quantity}
@@ -47,7 +54,6 @@ const PriceCalculator = () => {
         onChange={(e) => {
           const raw = e.target.value;
           if (raw.includes('-') || raw.includes('+') || raw.includes('e') || raw.includes('E')) {
-            e.preventDefault();
             return;
           }
           const nextQuantity = raw === '' ? 0 : Number(raw);
@@ -64,6 +70,7 @@ const PriceCalculator = () => {
       />
       <p className="text-base font-bold">Total: {total.toLocaleString()}</p>
       <button
+        type="button"
         className="text-base text-black text-center p-2 rounded-md w-20 border-2 border-gray-500 bg-gray-400 hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
         onClick={() => {
           setCalculatorState({
@@ -74,7 +81,7 @@ const PriceCalculator = () => {
       >
         Clear
       </button>
-    </div>
+    </section>
   );
 };
 
