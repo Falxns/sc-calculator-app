@@ -21,12 +21,17 @@ const PriceCalculator = () => {
         value={calculatorState.price === 0 ? '' : calculatorState.price}
         placeholder="Price"
         onChange={(e) => {
-          const nextPrice = e.target.value === '' ? 0 : Number(e.target.value);
-          setCalculatorState({
-            ...calculatorState,
+          const raw = e.target.value;
+          if (raw.includes('-') || raw.includes('+') || raw.includes('e') || raw.includes('E')) {
+            e.preventDefault();
+            return;
+          }
+          const nextPrice = raw === '' ? 0 : Number(raw);
+          setCalculatorState((prev) => ({
+            ...prev,
             price: nextPrice,
-            total: nextPrice * calculatorState.quantity,
-          });
+            total: nextPrice * prev.quantity,
+          }));
         }}
         onKeyDown={(e) => {
           if (['-', 'e', 'E', '+'].includes(e.key)) {
@@ -40,12 +45,17 @@ const PriceCalculator = () => {
         value={calculatorState.quantity === 0 ? '' : calculatorState.quantity}
         placeholder="Quantity"
         onChange={(e) => {
-          const nextQuantity = e.target.value === '' ? 0 : Number(e.target.value);
-          setCalculatorState({
-            ...calculatorState,
+          const raw = e.target.value;
+          if (raw.includes('-') || raw.includes('+') || raw.includes('e') || raw.includes('E')) {
+            e.preventDefault();
+            return;
+          }
+          const nextQuantity = raw === '' ? 0 : Number(raw);
+          setCalculatorState((prev) => ({
+            ...prev,
             quantity: nextQuantity,
-            total: calculatorState.price * nextQuantity,
-          });
+            total: prev.price * nextQuantity,
+          }));
         }}
         onKeyDown={(e) => {
           if (['-', 'e', 'E', '+'].includes(e.key)) {
