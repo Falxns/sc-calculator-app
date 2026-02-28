@@ -4,6 +4,6 @@ export interface CalculatorState {
   total: number;
 }
 
-export interface MessageState {
-  message: string;
+export interface MessageBuilderState {
+  messages: string[];
 }
