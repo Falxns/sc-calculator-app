@@ -1,5 +1,5 @@
-import Header from './components/Header/Header'
-import PriceCalculator from './components/PriceCalculator/PriceCalculator'
+import Header from './components/Header/Header';
+import PriceCalculator from './components/PriceCalculator/PriceCalculator';
 
 function App() {
   return (
@@ -7,7 +7,7 @@ function App() {
       <Header />
       <PriceCalculator />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
