@@ -17,7 +17,7 @@ const useLocalStorage = <T>(key: string, initialValue: T) => {
     } catch (err: unknown) {
       console.warn(`Error saving state to localStorage for key ${key}:`, err);
     }
-  }, [value]);
+  }, [key, value]);
 
   return [value, setValue] as const;
 };
