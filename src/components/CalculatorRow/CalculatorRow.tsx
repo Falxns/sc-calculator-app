@@ -43,7 +43,7 @@ const CalculatorRow = ({ calculator, setCalculatorState }: CalculatorRowProps) =
   };
 
   return (
-    <div key={id} className="glass-container bg-transparent flex-col sm:flex-row gap-2 w-full p-2">
+    <div className="glass-container bg-transparent flex-col sm:flex-row gap-2 w-full p-2">
       <img src={`/assets/${imgSrc}.png`} alt={imgSrc} className="w-12 h-12" />
       <input
         className="input w-32 text-center"
