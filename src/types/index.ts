@@ -1,4 +1,10 @@
 export interface CalculatorState {
+  calculators: Calculator[];
+}
+
+export interface Calculator {
+  id: string;
+  imgSrc: string;
   price: number;
   quantity: number;
 }
