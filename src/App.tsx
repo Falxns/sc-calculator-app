@@ -5,9 +5,9 @@ import MessageBuilder from './components/MessageBuilder/MessageBuilder';
 
 const App: React.FC = () => {
   return (
-    <div className="min-h-screen p-4 bg-gray-900 text-white">
+    <div className="flex flex-col gap-4">
       <Header />
-      <main className="container mx-auto p-4 flex flex-col gap-4">
+      <main className="glass-container flex-col gap-4 w-full max-w-3xl items-stretch">
         <PriceCalculator />
         <MessageBuilder />
       </main>
