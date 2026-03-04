@@ -1,73 +1,115 @@
-# React + TypeScript + Vite
+# Stalcraft:X Materials Calculator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A small single-page app for quick material calculations and message templates while playing [Stalcraft](https://stalcraft.net/). Built with React, TypeScript, Vite, and Tailwind CSS.
 
-Currently, two official plugins are available:
+**[Live demo](https://falxns.github.io/sc-calculator-app/)**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Materials calculator
 
-## Expanding the ESLint configuration
+- **Multiple items** — Preset list of in-game materials (Slastena, Solevik, Kub, Limonnik, Spirten, Myatnoplod) with default prices.
+- **Per-row inputs** — Price and quantity for each item; subtotal per row.
+- **Global total** — Sum of all (price × quantity) at the bottom.
+- **Reset** — Clear quantity for a single row or reset all quantities at once.
+- **Persistence** — Calculator state (prices and quantities) saved in `localStorage`.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Message builder
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Add messages** — Create multiple text blocks for quick copy-paste (e.g. trade messages).
+- **Edit & copy** — Edit any message and copy to clipboard with one click.
+- **Delete** — Remove a message with a confirmation modal (Escape to cancel).
+- **Persistence** — Messages saved in `localStorage`.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### UI & UX
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **Glassmorphism** — Frosted glass-style panels and inputs.
+- **Responsive** — Layout adapts to mobile and desktop.
+- **Toasts** — Feedback for copy and delete actions.
+- **Error boundary** — Fallback screen if something goes wrong, with "Try again".
+- **Accessibility** — Labels, ARIA, keyboard support (Escape closes modal).
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Tech stack
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **React 19** + **TypeScript**
+- **Vite 7**
+- **Tailwind CSS 3**
+- **localStorage** for state persistence (no backend)
+
+---
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 18+
+- npm (or yarn / pnpm)
+
+### Install
+
+    git clone https://github.com/Falxns/sc-calculator-app.git
+    cd sc-calculator-app
+    npm install
+
+### Development
+
+    npm run dev
+
+Open [http://localhost:5173](http://localhost:5173).
+
+### Build
+
+    npm run build
+
+Output is in `dist/`.
+
+### Preview production build
+
+    npm run preview
+
+---
+
+## Project structure
+
+    src/
+    ├── components/
+    │   ├── CalculatorRow/     # Single calculator row (price, quantity, subtotal, reset)
+    │   ├── ConfirmModal/      # Reusable confirmation dialog (e.g. delete message)
+    │   ├── ErrorBoundary/     # Catches render errors and shows fallback UI
+    │   ├── Header/            # App title and logo
+    │   ├── MessageBuilder/    # Message list, add, toast, delete modal
+    │   ├── MessageComponent/  # Single message (textarea, copy, delete)
+    │   ├── PriceCalculator/   # Calculator list and global total
+    │   └── icons/             # CopyIcon, TrashIcon, ResetIcon, LogoIcon
+    ├── hooks/
+    │   └── useLocalStorage.ts # Persist state to localStorage
+    ├── types/
+    │   └── index.ts           # CalculatorState, Message, etc.
+    ├── App.tsx
+    ├── main.tsx
+    └── index.css              # Tailwind + custom component classes
+    public/
+    └── assets/                # Item icons (PNG) and logo
+
+---
+
+## Scripts
+
+| Command           | Description                   |
+| ----------------- | ----------------------------- |
+| `npm run dev`     | Start dev server              |
+| `npm run build`   | Type-check + production build |
+| `npm run preview` | Serve `dist/` locally         |
+| `npm run deploy`  | Build and push to gh-pages    |
+| `npm run lint`    | Run ESLint                    |
+| `npm run format`  | Format with Prettier          |
+
+---
+
+## License
+
+MIT
