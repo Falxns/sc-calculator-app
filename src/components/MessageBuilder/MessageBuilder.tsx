@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import type { MessageBuilderState } from '../../types';
 import MessageComponent from '../MessageComponent/MessageComponent';
+import ConfirmModal from '../ConfirmModal/ConfirmModal';
 
 const MessageBuilder = () => {
   const [builderState, setBuilderState] = useLocalStorage<MessageBuilderState>(
@@ -60,13 +61,25 @@ const MessageBuilder = () => {
       });
   };
 
-  const handleDeleteMessage = (id: string) => {
-    if (confirm('Are you sure you want to delete this message?')) {
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  const requestDeleteMessage = (id: string) => {
+    setPendingDeleteId(id);
+  };
+
+  const confirmDeleteMessage = () => {
+    if (pendingDeleteId) {
       setBuilderState((prev) => ({
         ...prev,
-        messages: prev.messages.filter((m) => m.id !== id),
+        messages: prev.messages.filter((m) => m.id !== pendingDeleteId),
       }));
+      setPendingDeleteId(null);
+      showToast('Message deleted!', 'success');
     }
+  };
+
+  const cancelDeleteMessage = () => {
+    setPendingDeleteId(null);
   };
 
   return (
@@ -83,7 +96,7 @@ const MessageBuilder = () => {
           message={message}
           handleChangeMessage={handleChangeMessage}
           handleCopyMessage={handleCopyMessage}
-          handleDeleteMessage={handleDeleteMessage}
+          handleDeleteMessage={requestDeleteMessage}
         />
       ))}
       {toast &&
@@ -97,6 +110,14 @@ const MessageBuilder = () => {
           </div>,
           document.body
         )}
+      {createPortal(
+        <ConfirmModal
+          isOpen={pendingDeleteId !== null}
+          onConfirm={confirmDeleteMessage}
+          onCancel={cancelDeleteMessage}
+        />,
+        document.body
+      )}
     </section>
   );
 };
