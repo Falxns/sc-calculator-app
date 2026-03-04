@@ -3,7 +3,9 @@ interface LogoIconProps {
 }
 
 const LogoIcon = ({ className }: LogoIconProps) => {
-  return <img src="/assets/logo.png" alt="Logo" className={className} />;
+  return (
+    <img src={`${import.meta.env.BASE_URL}assets/logo.png`} alt="Logo" className={className} />
+  );
 };
 
 export default LogoIcon;
