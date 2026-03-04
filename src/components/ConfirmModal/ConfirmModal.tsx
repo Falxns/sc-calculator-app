@@ -52,8 +52,9 @@ const ConfirmModal = ({
         className="glass-container relative flex-col gap-4 p-6 max-w-sm w-full"
         role="dialog"
         aria-modal="true"
+        aria-labelledby="confirm-modal-message"
       >
-        <p className="text-base font-medium text-center">
+        <p className="text-base font-medium text-center" id="confirm-modal-message">
           {message || 'Are you sure you want to delete this message?'}
         </p>
         <div className="flex gap-4">

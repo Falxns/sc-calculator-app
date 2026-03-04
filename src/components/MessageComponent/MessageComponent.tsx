@@ -21,7 +21,7 @@ const MessageComponent = ({
   return (
     <div className="flex justify-center items-start gap-4 w-full">
       <textarea
-        className="input w-96 h-32 resize-none"
+        className="input w-full max-w-md h-32 resize-none"
         value={content}
         onChange={(e) => handleChangeMessage(id, e)}
         placeholder="Enter your message here"
