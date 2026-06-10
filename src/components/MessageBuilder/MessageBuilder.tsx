@@ -63,22 +63,35 @@ const MessageBuilder = () => {
   };
 
   return (
-    <section className="glass-container flex-col gap-4 w-full">
-      <button type="button" className="btn w-auto" onClick={handleAddMessage}>
-        Add message
-      </button>
-      {builderState.messages.length === 0 && (
-        <p className="text-base font-medium">No messages yet</p>
+    <section className="glass-container flex-col gap-3 w-full">
+      <div className="flex items-center justify-end w-full">
+        <button
+          type="button"
+          className="btn w-auto text-sm py-1.5 px-3"
+          onClick={handleAddMessage}
+        >
+          + Add message
+        </button>
+      </div>
+
+      {builderState.messages.length === 0 ? (
+        <p className="text-sm text-white/60 text-center py-6">
+          No messages yet. Click &quot;Add message&quot; to get started.
+        </p>
+      ) : (
+        <div className="w-full">
+          {builderState.messages.map((message) => (
+            <MessageComponent
+              key={message.id}
+              message={message}
+              handleChangeMessage={handleChangeMessage}
+              handleCopyMessage={handleCopyMessage}
+              handleDeleteMessage={requestDeleteMessage}
+            />
+          ))}
+        </div>
       )}
-      {builderState.messages.map((message) => (
-        <MessageComponent
-          key={message.id}
-          message={message}
-          handleChangeMessage={handleChangeMessage}
-          handleCopyMessage={handleCopyMessage}
-          handleDeleteMessage={requestDeleteMessage}
-        />
-      ))}
+
       <Toast toast={toast} />
       {createPortal(
         <ConfirmModal

@@ -9,7 +9,7 @@ const App: React.FC = () => {
     <ErrorBoundary>
       <div className="flex flex-col gap-4">
         <Header />
-        <main className="flex flex-col gap-4 w-full max-w-5xl mx-auto">
+        <main className="flex flex-col gap-4 w-full max-w-4xl mx-auto">
           <PriceCalculator />
           <MessageBuilder />
         </main>

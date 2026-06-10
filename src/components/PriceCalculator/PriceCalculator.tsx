@@ -51,20 +51,19 @@ const PriceCalculator = () => {
   };
 
   return (
-    <section className="glass-container flex-col gap-4 w-full">
-      <div className="flex items-center justify-between w-full gap-2">
-        <h2 className="text-lg font-semibold">Calculator</h2>
-        <button type="button" className="btn w-auto text-sm" onClick={addRow}>
-          Add row
+    <section className="glass-container flex-col gap-3 w-full">
+      <div className="flex items-center justify-end w-full">
+        <button type="button" className="btn w-auto text-sm py-1.5 px-3" onClick={addRow}>
+          + Add row
         </button>
       </div>
 
       {calculatorState.calculators.length === 0 ? (
-        <p className="text-base font-medium text-white/70 text-center py-4">
+        <p className="text-sm text-white/60 text-center py-6">
           No materials yet. Click &quot;Add row&quot; to get started.
         </p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+        <div className="w-full">
           {calculatorState.calculators.map((calculator) => (
             <CalculatorRow
               key={calculator.id}
@@ -77,11 +76,11 @@ const PriceCalculator = () => {
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-2 w-full pt-2 border-t border-white/10">
-        <span className="text-sm text-white/70">Total:</span>
+      <div className="flex items-center justify-center gap-3 w-full pt-3 border-t border-white/10">
+        <span className="text-base text-white/70">Total:</span>
         <button
           type="button"
-          className="copyable text-xl font-bold hover:text-white/80 transition-colors"
+          className="copyable text-2xl font-bold"
           aria-label={`Copy total ${total}`}
           onClick={() => handleCopy(total)}
         >

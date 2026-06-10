@@ -19,22 +19,22 @@ const MessageComponent = ({
   const { id, content } = message;
 
   return (
-    <div className="flex justify-center items-start gap-4 w-full">
+    <div className="flex items-stretch gap-3 w-full py-2.5 border-b border-white/10 last:border-b-0">
       <textarea
-        className="input w-full max-w-md h-32 resize-none"
+        className="input flex-1 min-w-0 min-h-28 py-2 px-3 text-base resize-y"
         value={content}
         onChange={(e) => handleChangeMessage(id, e)}
         placeholder="Enter your message here"
         aria-label={`Message ${id.slice(0, 8)}...`}
       />
-      <div className="flex flex-col justify-center items-center gap-2">
+      <div className="flex flex-col justify-center gap-1.5 shrink-0">
         <button
           type="button"
           className="btn w-auto p-2"
           aria-label="Copy"
           onClick={() => handleCopyMessage(content)}
         >
-          <CopyIcon className="w-5 h-5" />
+          <CopyIcon className="w-4 h-4" />
         </button>
         <button
           type="button"
@@ -42,7 +42,7 @@ const MessageComponent = ({
           aria-label="Delete"
           onClick={() => handleDeleteMessage(id)}
         >
-          <TrashIcon className="w-5 h-5" />
+          <TrashIcon className="w-4 h-4" />
         </button>
       </div>
     </div>
