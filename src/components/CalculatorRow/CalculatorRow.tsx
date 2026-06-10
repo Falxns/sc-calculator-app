@@ -1,14 +1,28 @@
 import React from 'react';
 import ResetIcon from '../icons/ResetIcon';
-import type { Calculator, CalculatorState } from '../../types';
+import TrashIcon from '../icons/TrashIcon';
+import type { Calculator, CalculatorState, Material } from '../../types';
+import { findMaterial, getMaterialImageSrc } from '../../utils/materialImage';
 
 interface CalculatorRowProps {
+  materials: Material[];
   setCalculatorState: React.Dispatch<React.SetStateAction<CalculatorState>>;
   calculator: Calculator;
+  onRemove: (id: string) => void;
+  onCopy: (value: number) => void;
 }
 
-const CalculatorRow = ({ calculator, setCalculatorState }: CalculatorRowProps) => {
-  const { id, imgSrc, price, quantity } = calculator;
+const CalculatorRow = ({
+  materials,
+  calculator,
+  setCalculatorState,
+  onRemove,
+  onCopy,
+}: CalculatorRowProps) => {
+  const { id, materialId, price, quantity } = calculator;
+  const material = findMaterial(materials, materialId);
+  const subtotal = price * quantity;
+  const imageSrc = getMaterialImageSrc(material);
 
   const rejectRawInput = (raw: string) =>
     raw.includes('-') || raw.includes('+') || raw.includes('e') || raw.includes('E');
@@ -21,14 +35,27 @@ const CalculatorRow = ({ calculator, setCalculatorState }: CalculatorRowProps) =
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>, key: 'price' | 'quantity') => {
     const raw = e.target.value;
-    if (rejectRawInput(raw)) {
-      return;
-    }
+    if (rejectRawInput(raw)) return;
+
     const nextValue = raw === '' ? 0 : Number(raw);
     setCalculatorState((prev) => ({
       ...prev,
       calculators: prev.calculators.map((calc) =>
         calc.id === id ? { ...calc, [key]: nextValue } : calc
+      ),
+    }));
+  };
+
+  const handleMaterialChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const nextMaterial = findMaterial(materials, e.target.value);
+    if (!nextMaterial) return;
+
+    setCalculatorState((prev) => ({
+      ...prev,
+      calculators: prev.calculators.map((calc) =>
+        calc.id === id
+          ? { ...calc, materialId: nextMaterial.id, price: nextMaterial.defaultPrice }
+          : calc
       ),
     }));
   };
@@ -43,43 +70,68 @@ const CalculatorRow = ({ calculator, setCalculatorState }: CalculatorRowProps) =
   };
 
   return (
-    <div className="glass-container bg-transparent flex-col sm:flex-row gap-2 w-full p-2">
-      <img
-        src={`${import.meta.env.BASE_URL}assets/${imgSrc}.png`}
-        alt={imgSrc}
-        className="w-12 h-12"
-      />
+    <div className="flex flex-wrap items-center gap-2 py-2 first:pt-0 last:pb-0 w-full sm:grid sm:grid-cols-[auto_minmax(7rem,1.2fr)_minmax(5rem,1fr)_minmax(4rem,0.8fr)_minmax(6rem,1.2fr)_auto] sm:gap-x-3 sm:gap-y-0">
+      {imageSrc ? (
+        <img src={imageSrc} alt={material?.label ?? materialId} className="w-9 h-9 shrink-0" />
+      ) : (
+        <span className="w-9 h-9 shrink-0 rounded-lg bg-white/10" aria-hidden />
+      )}
+      <select
+        className="input py-2 px-2 text-sm w-full min-w-[7rem] flex-1 sm:flex-none sm:min-w-0"
+        value={materialId}
+        aria-label={`Material for ${material?.label ?? materialId}`}
+        onChange={handleMaterialChange}
+      >
+        {materials.map((m) => (
+          <option key={m.id} value={m.id}>
+            {m.label}
+          </option>
+        ))}
+      </select>
       <input
-        className="input w-32 text-center"
+        className="input py-2 text-base text-center w-full min-w-[5rem] flex-1 sm:flex-none sm:min-w-0"
         type="number"
         value={price === 0 ? '' : price}
         placeholder="Price"
-        aria-label={`Price for ${imgSrc}`}
-        onChange={(e) => {
-          handleChange(e, 'price');
-        }}
+        aria-label={`Price for ${material?.label ?? materialId}`}
+        onChange={(e) => handleChange(e, 'price')}
         onKeyDown={excludeSpecialCharacters}
       />
       <input
-        className="input w-32 text-center"
+        className="input py-2 text-base text-center w-full min-w-[4rem] flex-1 sm:flex-none sm:min-w-0"
         type="number"
         value={quantity === 0 ? '' : quantity}
-        placeholder="Quantity"
-        aria-label={`Quantity for ${imgSrc}`}
-        onChange={(e) => {
-          handleChange(e, 'quantity');
-        }}
+        placeholder="Qty"
+        aria-label={`Quantity for ${material?.label ?? materialId}`}
+        onChange={(e) => handleChange(e, 'quantity')}
         onKeyDown={excludeSpecialCharacters}
       />
-      <p className="text-base font-bold">Subtotal: {(price * quantity).toLocaleString()}</p>
       <button
         type="button"
-        className="btn w-auto p-2"
-        aria-label="Reset quantity"
-        onClick={resetQuantity}
+        className="copyable text-base font-semibold text-center w-full min-w-[5rem] flex-1 sm:flex-none sm:min-w-0 py-2"
+        aria-label={`Copy subtotal ${subtotal}`}
+        onClick={() => onCopy(subtotal)}
       >
-        <ResetIcon className="w-5 h-5" />
+        {subtotal.toLocaleString()}
       </button>
+      <div className="flex items-center gap-1.5 shrink-0 ml-auto sm:ml-0">
+        <button
+          type="button"
+          className="btn w-auto p-1.5"
+          aria-label="Reset quantity"
+          onClick={resetQuantity}
+        >
+          <ResetIcon className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          className="btn w-auto p-1.5"
+          aria-label="Remove row"
+          onClick={() => onRemove(id)}
+        >
+          <TrashIcon className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 };

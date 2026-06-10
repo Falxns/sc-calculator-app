@@ -1,9 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import useLocalStorage from '../../hooks/useLocalStorage';
+import useToast from '../../hooks/useToast';
 import type { MessageBuilderState } from '../../types';
+import { copyToClipboard } from '../../utils/copyToClipboard';
 import MessageComponent from '../MessageComponent/MessageComponent';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
+import PlusIcon from '../icons/PlusIcon';
+import Toast from '../Toast/Toast';
 
 const MessageBuilder = () => {
   const [builderState, setBuilderState] = useLocalStorage<MessageBuilderState>(
@@ -13,28 +17,7 @@ const MessageBuilder = () => {
     }
   );
 
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const toastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showToast = (message: string, type: 'success' | 'error') => {
-    if (toastRef.current) {
-      clearTimeout(toastRef.current);
-      toastRef.current = null;
-    }
-    setToast({ message, type });
-    toastRef.current = setTimeout(() => {
-      setToast(null);
-      toastRef.current = null;
-    }, 2500);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (toastRef.current) {
-        clearTimeout(toastRef.current);
-      }
-    };
-  }, []);
+  const { toast, showToast } = useToast();
 
   const handleAddMessage = () => {
     setBuilderState((prev) => ({
@@ -50,15 +33,13 @@ const MessageBuilder = () => {
     }));
   };
 
-  const handleCopyMessage = (content: string) => {
-    navigator.clipboard
-      .writeText(content)
-      .then(() => {
-        showToast('Copied!', 'success');
-      })
-      .catch(() => {
-        showToast('Failed to copy!', 'error');
-      });
+  const handleCopyMessage = async (content: string) => {
+    try {
+      await copyToClipboard(content);
+      showToast('Copied!', 'success');
+    } catch {
+      showToast('Failed to copy!', 'error');
+    }
   };
 
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -83,33 +64,36 @@ const MessageBuilder = () => {
   };
 
   return (
-    <section className="glass-container flex-col gap-4 w-full">
-      <button type="button" className="btn w-auto" onClick={handleAddMessage}>
-        Add message
-      </button>
-      {builderState.messages.length === 0 && (
-        <p className="text-base font-medium">No messages yet</p>
-      )}
-      {builderState.messages.map((message) => (
-        <MessageComponent
-          key={message.id}
-          message={message}
-          handleChangeMessage={handleChangeMessage}
-          handleCopyMessage={handleCopyMessage}
-          handleDeleteMessage={requestDeleteMessage}
-        />
-      ))}
-      {toast &&
-        createPortal(
-          <div
-            role="status"
-            aria-live="polite"
-            className={`blur-effect fixed top-4 right-4 p-4 z-50 ${toast.type === 'success' ? 'bg-green-300/30 hover:bg-green-300/40' : 'bg-red-300/30 hover:bg-red-300/40'}`}
-          >
-            {toast.message}
-          </div>,
-          document.body
+    <div className="flex items-start gap-2 w-full">
+      <section className="glass-container flex-col gap-3 flex-1 min-w-0">
+        {builderState.messages.length === 0 ? (
+          <p className="text-sm text-white/60 text-center py-6">
+            No messages yet. Click &quot;Add message&quot; to get started.
+          </p>
+        ) : (
+          <div className="w-full">
+            {builderState.messages.map((message) => (
+              <MessageComponent
+                key={message.id}
+                message={message}
+                handleChangeMessage={handleChangeMessage}
+                handleCopyMessage={handleCopyMessage}
+                handleDeleteMessage={requestDeleteMessage}
+              />
+            ))}
+          </div>
         )}
+
+        <Toast toast={toast} />
+      </section>
+      <button
+        type="button"
+        className="btn w-auto p-2.5 shrink-0 mt-4"
+        aria-label="Add message"
+        onClick={handleAddMessage}
+      >
+        <PlusIcon className="w-6 h-6" />
+      </button>
       {createPortal(
         <ConfirmModal
           isOpen={pendingDeleteId !== null}
@@ -118,7 +102,7 @@ const MessageBuilder = () => {
         />,
         document.body
       )}
-    </section>
+    </div>
   );
 };
 
