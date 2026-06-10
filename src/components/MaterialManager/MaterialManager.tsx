@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import {
-  createUniqueMaterialId,
-} from '../../constants/materials';
+import { createUniqueMaterialId } from '../../constants/materials';
 import type { Material } from '../../types';
 import { getMaterialImageSrc } from '../../utils/materialImage';
+import PlusIcon from '../icons/PlusIcon';
 
 const readFileAsDataUrl = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -24,7 +23,6 @@ const MaterialManager = ({
   setMaterials,
   onMaterialRemoved,
 }: MaterialManagerProps) => {
-  const [isOpen, setIsOpen] = useState(false);
   const [label, setLabel] = useState('');
   const [defaultPrice, setDefaultPrice] = useState('');
   const [imageData, setImageData] = useState<string | undefined>();
@@ -78,89 +76,81 @@ const MaterialManager = ({
   };
 
   return (
-    <div className="w-full border-t border-white/10 pt-3">
-      <button
-        type="button"
-        className="text-sm text-white/70 hover:text-white transition-colors"
-        onClick={() => setIsOpen((open) => !open)}
-        aria-expanded={isOpen}
-      >
-        {isOpen ? '▾ Hide materials' : '▸ Manage materials'}
-      </button>
-
-      {isOpen && (
-        <div className="mt-3 flex flex-col gap-3">
-          <ul className="flex flex-col gap-2">
-            {materials.map((material) => (
-              <li
-                key={material.id}
-                className="flex items-center gap-2 text-sm py-1 border-b border-white/5 last:border-b-0"
-              >
-                {getMaterialImageSrc(material) ? (
-                  <img
-                    src={getMaterialImageSrc(material)}
-                    alt=""
-                    className="w-6 h-6 shrink-0"
-                  />
-                ) : (
-                  <span className="w-6 h-6 shrink-0 rounded bg-white/10" />
-                )}
-                <span className="flex-1 min-w-0 truncate">{material.label}</span>
-                <span className="text-white/60 shrink-0">
-                  {material.defaultPrice.toLocaleString()}
-                </span>
-                <button
-                  type="button"
-                  className="btn w-auto p-1 shrink-0 text-xs"
-                  aria-label={`Remove ${material.label}`}
-                  disabled={materials.length <= 1}
-                  onClick={() => handleRemoveMaterial(material.id)}
-                >
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
-
-          <div className="flex flex-wrap items-end gap-2">
-            <input
-              className="input py-1.5 px-2 text-sm flex-1 min-w-[6rem]"
-              type="text"
-              placeholder="Name"
-              value={label}
-              aria-label="Material name"
-              onChange={(e) => setLabel(e.target.value)}
-            />
-            <input
-              className="input py-1.5 px-2 text-sm w-24 text-center"
-              type="number"
-              placeholder="Price"
-              value={defaultPrice}
-              aria-label="Default price"
-              onChange={(e) => setDefaultPrice(e.target.value)}
-            />
-            <label className="btn w-auto py-1.5 px-2 text-sm cursor-pointer">
-              Icon
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageUpload}
+    <div className="flex flex-col gap-3 w-full">
+      <ul className="flex flex-col divide-y divide-white/10">
+        {materials.map((material) => (
+          <li
+            key={material.id}
+            className="flex items-center gap-2 text-sm py-2 first:pt-0 last:pb-0"
+          >
+            {getMaterialImageSrc(material) ? (
+              <img
+                src={getMaterialImageSrc(material)}
+                alt=""
+                className="w-6 h-6 shrink-0"
               />
-            </label>
+            ) : (
+              <span className="w-6 h-6 shrink-0 rounded bg-white/10" />
+            )}
+            <span className="flex-1 min-w-0 truncate">{material.label}</span>
+            <span className="text-white/60 shrink-0">
+              {material.defaultPrice.toLocaleString()}
+            </span>
             <button
               type="button"
-              className="btn w-auto py-1.5 px-3 text-sm"
-              onClick={handleAddMaterial}
+              className="btn w-7 h-7 min-w-7 p-0 shrink-0 flex items-center justify-center text-base leading-none"
+              aria-label={`Remove ${material.label}`}
+              disabled={materials.length <= 1}
+              onClick={() => handleRemoveMaterial(material.id)}
             >
-              Add
+              ×
             </button>
-          </div>
-          {imageData && (
-            <p className="text-xs text-white/50">Custom icon selected</p>
+          </li>
+        ))}
+      </ul>
+
+      <div className="flex flex-wrap items-end gap-2">
+        <label
+          className="btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center cursor-pointer overflow-hidden text-xs"
+          aria-label="Upload icon"
+        >
+          {imageData ? (
+            <img src={imageData} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-white/60">Icon</span>
           )}
-        </div>
-      )}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageUpload}
+          />
+        </label>
+        <input
+          className="input py-1.5 px-2 text-sm flex-1 min-w-[6rem]"
+          type="text"
+          placeholder="Name"
+          value={label}
+          aria-label="Material name"
+          onChange={(e) => setLabel(e.target.value)}
+        />
+        <input
+          className="input py-1.5 px-2 text-sm w-24 text-center"
+          type="number"
+          placeholder="Price"
+          value={defaultPrice}
+          aria-label="Default price"
+          onChange={(e) => setDefaultPrice(e.target.value)}
+        />
+        <button
+          type="button"
+          className="btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center"
+          aria-label="Add material"
+          onClick={handleAddMaterial}
+        >
+          <PlusIcon className="w-5 h-5" />
+        </button>
+      </div>
     </div>
   );
 };

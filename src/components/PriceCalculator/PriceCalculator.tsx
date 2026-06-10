@@ -1,5 +1,5 @@
+import { useEffect } from 'react';
 import useLocalStorage from '../../hooks/useLocalStorage';
-import useMaterials from '../../hooks/useMaterials';
 import useToast from '../../hooks/useToast';
 import {
   createCalculator,
@@ -9,7 +9,6 @@ import {
 import type { Calculator, CalculatorState, Material } from '../../types';
 import { copyToClipboard } from '../../utils/copyToClipboard';
 import CalculatorRow from '../CalculatorRow/CalculatorRow';
-import MaterialManager from '../MaterialManager/MaterialManager';
 import ResetIcon from '../icons/ResetIcon';
 import PlusIcon from '../icons/PlusIcon';
 import Toast from '../Toast/Toast';
@@ -46,14 +45,20 @@ const deserializeCalculatorState =
     return { calculators: migrateCalculators(stored.calculators, materials) };
   };
 
-const PriceCalculator = () => {
-  const [materialsState, setMaterialsState] = useMaterials();
-  const materials = materialsState.materials.length ? materialsState.materials : DEFAULT_MATERIALS;
+interface PriceCalculatorProps {
+  materials: Material[];
+  onMaterialRemovedRef: React.MutableRefObject<
+    (materialId: string, remainingMaterials: Material[]) => void
+  >;
+}
+
+const PriceCalculator = ({ materials, onMaterialRemovedRef }: PriceCalculatorProps) => {
+  const resolvedMaterials = materials.length ? materials : DEFAULT_MATERIALS;
 
   const [calculatorState, setCalculatorState] = useLocalStorage<CalculatorState>(
     'calculatorState',
-    { calculators: createDefaultCalculators(materials) },
-    deserializeCalculatorState(materials)
+    { calculators: createDefaultCalculators(resolvedMaterials) },
+    deserializeCalculatorState(resolvedMaterials)
   );
 
   const { toast, showToast } = useToast();
@@ -75,7 +80,7 @@ const PriceCalculator = () => {
   const addRow = () => {
     setCalculatorState((prev) => ({
       ...prev,
-      calculators: [...prev.calculators, createCalculator(materials)],
+      calculators: [...prev.calculators, createCalculator(resolvedMaterials)],
     }));
   };
 
@@ -107,6 +112,10 @@ const PriceCalculator = () => {
     }));
   };
 
+  useEffect(() => {
+    onMaterialRemovedRef.current = handleMaterialRemoved;
+  });
+
   return (
     <div className="flex items-start gap-2 w-full">
       <section className="glass-container flex-col gap-3 flex-1 min-w-0">
@@ -115,11 +124,11 @@ const PriceCalculator = () => {
             No rows yet. Use + to add a calculator row.
           </p>
         ) : (
-          <div className="w-full">
+          <div className="w-full divide-y divide-white/10">
             {calculatorState.calculators.map((calculator) => (
               <CalculatorRow
                 key={calculator.id}
-                materials={materials}
+                materials={resolvedMaterials}
                 setCalculatorState={setCalculatorState}
                 calculator={calculator}
                 onRemove={removeRow}
@@ -129,13 +138,7 @@ const PriceCalculator = () => {
           </div>
         )}
 
-        <MaterialManager
-          materials={materials}
-          setMaterials={setMaterialsState}
-          onMaterialRemoved={handleMaterialRemoved}
-        />
-
-        <div className="flex items-center justify-center gap-3 w-full pt-3 border-t border-white/10">
+        <div className="flex items-center justify-center gap-3 w-full">
           <span className="text-base text-white/70">Total:</span>
           <button
             type="button"

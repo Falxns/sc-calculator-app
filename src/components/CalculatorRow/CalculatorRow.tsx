@@ -70,7 +70,7 @@ const CalculatorRow = ({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 py-2.5 border-b border-white/10 last:border-b-0 w-full sm:grid sm:grid-cols-[auto_minmax(7rem,1.2fr)_minmax(5rem,1fr)_minmax(4rem,0.8fr)_minmax(6rem,1.2fr)_auto] sm:gap-x-3 sm:gap-y-0">
+    <div className="flex flex-wrap items-center gap-2 py-2 first:pt-0 last:pb-0 w-full sm:grid sm:grid-cols-[auto_minmax(7rem,1.2fr)_minmax(5rem,1fr)_minmax(4rem,0.8fr)_minmax(6rem,1.2fr)_auto] sm:gap-x-3 sm:gap-y-0">
       {imageSrc ? (
         <img src={imageSrc} alt={material?.label ?? materialId} className="w-9 h-9 shrink-0" />
       ) : (
