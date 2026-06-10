@@ -1,10 +1,11 @@
 import React from 'react';
-import { MATERIALS } from '../../constants/materials';
 import ResetIcon from '../icons/ResetIcon';
 import TrashIcon from '../icons/TrashIcon';
-import type { Calculator, CalculatorState } from '../../types';
+import type { Calculator, CalculatorState, Material } from '../../types';
+import { findMaterial, getMaterialImageSrc } from '../../utils/materialImage';
 
 interface CalculatorRowProps {
+  materials: Material[];
   setCalculatorState: React.Dispatch<React.SetStateAction<CalculatorState>>;
   calculator: Calculator;
   onRemove: (id: string) => void;
@@ -12,13 +13,16 @@ interface CalculatorRowProps {
 }
 
 const CalculatorRow = ({
+  materials,
   calculator,
   setCalculatorState,
   onRemove,
   onCopy,
 }: CalculatorRowProps) => {
-  const { id, imgSrc, price, quantity } = calculator;
+  const { id, materialId, price, quantity } = calculator;
+  const material = findMaterial(materials, materialId);
   const subtotal = price * quantity;
+  const imageSrc = getMaterialImageSrc(material);
 
   const rejectRawInput = (raw: string) =>
     raw.includes('-') || raw.includes('+') || raw.includes('e') || raw.includes('E');
@@ -43,14 +47,14 @@ const CalculatorRow = ({
   };
 
   const handleMaterialChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const material = MATERIALS.find((m) => m.imgSrc === e.target.value);
-    if (!material) return;
+    const nextMaterial = findMaterial(materials, e.target.value);
+    if (!nextMaterial) return;
 
     setCalculatorState((prev) => ({
       ...prev,
       calculators: prev.calculators.map((calc) =>
         calc.id === id
-          ? { ...calc, imgSrc: material.imgSrc, price: material.defaultPrice }
+          ? { ...calc, materialId: nextMaterial.id, price: nextMaterial.defaultPrice }
           : calc
       ),
     }));
@@ -67,20 +71,20 @@ const CalculatorRow = ({
 
   return (
     <div className="flex flex-wrap items-center gap-2 py-2.5 border-b border-white/10 last:border-b-0 w-full sm:grid sm:grid-cols-[auto_minmax(7rem,1.2fr)_minmax(5rem,1fr)_minmax(4rem,0.8fr)_minmax(6rem,1.2fr)_auto] sm:gap-x-3 sm:gap-y-0">
-      <img
-        src={`${import.meta.env.BASE_URL}assets/${imgSrc}.png`}
-        alt={imgSrc}
-        className="w-9 h-9 shrink-0"
-      />
+      {imageSrc ? (
+        <img src={imageSrc} alt={material?.label ?? materialId} className="w-9 h-9 shrink-0" />
+      ) : (
+        <span className="w-9 h-9 shrink-0 rounded-lg bg-white/10" aria-hidden />
+      )}
       <select
         className="input py-2 px-2 text-sm w-full min-w-[7rem] flex-1 sm:flex-none sm:min-w-0"
-        value={imgSrc}
-        aria-label={`Material for ${imgSrc}`}
+        value={materialId}
+        aria-label={`Material for ${material?.label ?? materialId}`}
         onChange={handleMaterialChange}
       >
-        {MATERIALS.map((material) => (
-          <option key={material.imgSrc} value={material.imgSrc}>
-            {material.label}
+        {materials.map((m) => (
+          <option key={m.id} value={m.id}>
+            {m.label}
           </option>
         ))}
       </select>
@@ -89,7 +93,7 @@ const CalculatorRow = ({
         type="number"
         value={price === 0 ? '' : price}
         placeholder="Price"
-        aria-label={`Price for ${imgSrc}`}
+        aria-label={`Price for ${material?.label ?? materialId}`}
         onChange={(e) => handleChange(e, 'price')}
         onKeyDown={excludeSpecialCharacters}
       />
@@ -98,7 +102,7 @@ const CalculatorRow = ({
         type="number"
         value={quantity === 0 ? '' : quantity}
         placeholder="Qty"
-        aria-label={`Quantity for ${imgSrc}`}
+        aria-label={`Quantity for ${material?.label ?? materialId}`}
         onChange={(e) => handleChange(e, 'quantity')}
         onKeyDown={excludeSpecialCharacters}
       />

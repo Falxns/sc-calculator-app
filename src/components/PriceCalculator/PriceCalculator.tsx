@@ -1,17 +1,59 @@
 import useLocalStorage from '../../hooks/useLocalStorage';
+import useMaterials from '../../hooks/useMaterials';
 import useToast from '../../hooks/useToast';
-import { createCalculator, createDefaultCalculators } from '../../constants/materials';
-import type { CalculatorState } from '../../types';
+import {
+  createCalculator,
+  createDefaultCalculators,
+  DEFAULT_MATERIALS,
+} from '../../constants/materials';
+import type { Calculator, CalculatorState, Material } from '../../types';
 import { copyToClipboard } from '../../utils/copyToClipboard';
 import CalculatorRow from '../CalculatorRow/CalculatorRow';
+import MaterialManager from '../MaterialManager/MaterialManager';
 import ResetIcon from '../icons/ResetIcon';
 import PlusIcon from '../icons/PlusIcon';
 import Toast from '../Toast/Toast';
 
+/** Migrate legacy calculator rows that used `imgSrc` instead of `materialId`. */
+const migrateCalculators = (raw: unknown, materials: Material[]): Calculator[] => {
+  if (!Array.isArray(raw)) return createDefaultCalculators(materials);
+
+  const materialIds = materials.map((m) => m.id);
+  const fallbackId = materialIds[0] ?? '';
+
+  return raw.map((item) => {
+    const row = item as Record<string, unknown>;
+    const legacyId = String(row.materialId ?? row.imgSrc ?? '');
+    const materialId = materialIds.includes(legacyId) ? legacyId : fallbackId;
+    const material = materials.find((m) => m.id === materialId);
+
+    return {
+      id: String(row.id ?? crypto.randomUUID()),
+      materialId,
+      price: Number(row.price) || material?.defaultPrice || 0,
+      quantity: Number(row.quantity) || 0,
+    };
+  });
+};
+
+const deserializeCalculatorState =
+  (materials: Material[]) =>
+  (parsed: unknown): CalculatorState => {
+    const stored = parsed as Partial<CalculatorState> | null;
+    if (!stored?.calculators?.length) {
+      return { calculators: createDefaultCalculators(materials) };
+    }
+    return { calculators: migrateCalculators(stored.calculators, materials) };
+  };
+
 const PriceCalculator = () => {
+  const [materialsState, setMaterialsState] = useMaterials();
+  const materials = materialsState.materials.length ? materialsState.materials : DEFAULT_MATERIALS;
+
   const [calculatorState, setCalculatorState] = useLocalStorage<CalculatorState>(
     'calculatorState',
-    { calculators: createDefaultCalculators() }
+    { calculators: createDefaultCalculators(materials) },
+    deserializeCalculatorState(materials)
   );
 
   const { toast, showToast } = useToast();
@@ -33,7 +75,7 @@ const PriceCalculator = () => {
   const addRow = () => {
     setCalculatorState((prev) => ({
       ...prev,
-      calculators: [...prev.calculators, createCalculator()],
+      calculators: [...prev.calculators, createCalculator(materials)],
     }));
   };
 
@@ -51,18 +93,33 @@ const PriceCalculator = () => {
     }));
   };
 
+  const handleMaterialRemoved = (materialId: string, remainingMaterials: Material[]) => {
+    const fallback = remainingMaterials[0];
+    if (!fallback) return;
+
+    setCalculatorState((prev) => ({
+      ...prev,
+      calculators: prev.calculators.map((calc) =>
+        calc.materialId === materialId
+          ? { ...calc, materialId: fallback.id, price: fallback.defaultPrice }
+          : calc
+      ),
+    }));
+  };
+
   return (
     <div className="flex items-start gap-2 w-full">
       <section className="glass-container flex-col gap-3 flex-1 min-w-0">
         {calculatorState.calculators.length === 0 ? (
           <p className="text-sm text-white/60 text-center py-6">
-            No materials yet. Click &quot;Add row&quot; to get started.
+            No rows yet. Use + to add a calculator row.
           </p>
         ) : (
           <div className="w-full">
             {calculatorState.calculators.map((calculator) => (
               <CalculatorRow
                 key={calculator.id}
+                materials={materials}
                 setCalculatorState={setCalculatorState}
                 calculator={calculator}
                 onRemove={removeRow}
@@ -71,6 +128,12 @@ const PriceCalculator = () => {
             ))}
           </div>
         )}
+
+        <MaterialManager
+          materials={materials}
+          setMaterials={setMaterialsState}
+          onMaterialRemoved={handleMaterialRemoved}
+        />
 
         <div className="flex items-center justify-center gap-3 w-full pt-3 border-t border-white/10">
           <span className="text-base text-white/70">Total:</span>
