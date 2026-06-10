@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import useLocalStorage from '../../hooks/useLocalStorage';
+import useToast from '../../hooks/useToast';
 import type { MessageBuilderState } from '../../types';
+import { copyToClipboard } from '../../utils/copyToClipboard';
 import MessageComponent from '../MessageComponent/MessageComponent';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
+import Toast from '../Toast/Toast';
 
 const MessageBuilder = () => {
   const [builderState, setBuilderState] = useLocalStorage<MessageBuilderState>(
@@ -13,28 +16,7 @@ const MessageBuilder = () => {
     }
   );
 
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const toastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showToast = (message: string, type: 'success' | 'error') => {
-    if (toastRef.current) {
-      clearTimeout(toastRef.current);
-      toastRef.current = null;
-    }
-    setToast({ message, type });
-    toastRef.current = setTimeout(() => {
-      setToast(null);
-      toastRef.current = null;
-    }, 2500);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (toastRef.current) {
-        clearTimeout(toastRef.current);
-      }
-    };
-  }, []);
+  const { toast, showToast } = useToast();
 
   const handleAddMessage = () => {
     setBuilderState((prev) => ({
@@ -50,15 +32,13 @@ const MessageBuilder = () => {
     }));
   };
 
-  const handleCopyMessage = (content: string) => {
-    navigator.clipboard
-      .writeText(content)
-      .then(() => {
-        showToast('Copied!', 'success');
-      })
-      .catch(() => {
-        showToast('Failed to copy!', 'error');
-      });
+  const handleCopyMessage = async (content: string) => {
+    try {
+      await copyToClipboard(content);
+      showToast('Copied!', 'success');
+    } catch {
+      showToast('Failed to copy!', 'error');
+    }
   };
 
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -99,17 +79,7 @@ const MessageBuilder = () => {
           handleDeleteMessage={requestDeleteMessage}
         />
       ))}
-      {toast &&
-        createPortal(
-          <div
-            role="status"
-            aria-live="polite"
-            className={`blur-effect fixed top-4 right-4 p-4 z-50 ${toast.type === 'success' ? 'bg-green-300/30 hover:bg-green-300/40' : 'bg-red-300/30 hover:bg-red-300/40'}`}
-          >
-            {toast.message}
-          </div>,
-          document.body
-        )}
+      <Toast toast={toast} />
       {createPortal(
         <ConfirmModal
           isOpen={pendingDeleteId !== null}
