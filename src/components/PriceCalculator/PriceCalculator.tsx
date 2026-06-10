@@ -50,9 +50,14 @@ interface PriceCalculatorProps {
   onMaterialRemovedRef: React.MutableRefObject<
     (materialId: string, remainingMaterials: Material[]) => void
   >;
+  onMaterialsImportedRef: React.MutableRefObject<(materials: Material[]) => void>;
 }
 
-const PriceCalculator = ({ materials, onMaterialRemovedRef }: PriceCalculatorProps) => {
+const PriceCalculator = ({
+  materials,
+  onMaterialRemovedRef,
+  onMaterialsImportedRef,
+}: PriceCalculatorProps) => {
   const resolvedMaterials = materials.length ? materials : DEFAULT_MATERIALS;
 
   const [calculatorState, setCalculatorState] = useLocalStorage<CalculatorState>(
@@ -112,8 +117,24 @@ const PriceCalculator = ({ materials, onMaterialRemovedRef }: PriceCalculatorPro
     }));
   };
 
+  const handleMaterialsImported = (newMaterials: Material[]) => {
+    const ids = new Set(newMaterials.map((m) => m.id));
+    const fallback = newMaterials[0];
+    if (!fallback) return;
+
+    setCalculatorState((prev) => ({
+      ...prev,
+      calculators: prev.calculators.map((calc) =>
+        ids.has(calc.materialId)
+          ? calc
+          : { ...calc, materialId: fallback.id, price: fallback.defaultPrice }
+      ),
+    }));
+  };
+
   useEffect(() => {
     onMaterialRemovedRef.current = handleMaterialRemoved;
+    onMaterialsImportedRef.current = handleMaterialsImported;
   });
 
   return (

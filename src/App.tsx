@@ -3,7 +3,7 @@ import Header from './components/Header/Header';
 import PriceCalculator from './components/PriceCalculator/PriceCalculator';
 import MessageBuilder from './components/MessageBuilder/MessageBuilder';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
-import MaterialManagerTrigger from './components/MaterialManager/MaterialManagerTrigger';
+import SideToolbar from './components/SideToolbar/SideToolbar';
 import useMaterials from './hooks/useMaterials';
 import { DEFAULT_MATERIALS } from './constants/materials';
 import type { Material } from './types';
@@ -14,6 +14,7 @@ const App = () => {
   const onMaterialRemovedRef = useRef<
     (materialId: string, remainingMaterials: Material[]) => void
   >(() => {});
+  const onMaterialsImportedRef = useRef<(materials: Material[]) => void>(() => {});
 
   return (
     <ErrorBoundary>
@@ -23,14 +24,18 @@ const App = () => {
           <PriceCalculator
             materials={materials}
             onMaterialRemovedRef={onMaterialRemovedRef}
+            onMaterialsImportedRef={onMaterialsImportedRef}
           />
           <MessageBuilder />
         </main>
-        <MaterialManagerTrigger
+        <SideToolbar
           materials={materials}
           setMaterials={setMaterialsState}
           onMaterialRemoved={(materialId, remainingMaterials) =>
             onMaterialRemovedRef.current(materialId, remainingMaterials)
+          }
+          onMaterialsImported={(importedMaterials) =>
+            onMaterialsImportedRef.current(importedMaterials)
           }
         />
       </div>
