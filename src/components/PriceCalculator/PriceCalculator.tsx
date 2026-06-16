@@ -1,7 +1,13 @@
 import { useEffect } from 'react';
 import useToast from '../../hooks/useToast';
 import { createCalculator, DEFAULT_MATERIALS } from '../../constants/materials';
-import { sectionGridClass, sectionGlassClass, sideActionButtonClass } from '../../constants/layout';
+import {
+  sectionWrapperClass,
+  sectionSideLeftClass,
+  sectionSideRightClass,
+  sectionGlassClass,
+  sideActionButtonClass,
+} from '../../constants/layout';
 import type { CalculatorProfile, CalculatorState, Material } from '../../types';
 import { copyToClipboard } from '../../utils/copyToClipboard';
 import CalculatorRow from '../CalculatorRow/CalculatorRow';
@@ -87,15 +93,17 @@ const PriceCalculator = ({
   });
 
   return (
-    <div className={sectionGridClass}>
-      <ProfileToolbar
-        profiles={profiles}
-        activeProfileId={activeProfileId}
-        onSwitch={onSwitchProfile}
-        onAdd={onAddProfile}
-        onDelete={onDeleteProfile}
-        suggestProfileName={suggestProfileName}
-      />
+    <div className={sectionWrapperClass}>
+      <div className={sectionSideLeftClass}>
+        <ProfileToolbar
+          profiles={profiles}
+          activeProfileId={activeProfileId}
+          onSwitch={onSwitchProfile}
+          onAdd={onAddProfile}
+          onDelete={onDeleteProfile}
+          suggestProfileName={suggestProfileName}
+        />
+      </div>
 
       <section className={sectionGlassClass}>
         {calculatorState.calculators.length === 0 ? (
@@ -117,19 +125,21 @@ const PriceCalculator = ({
           </div>
         )}
 
-        <div className="flex items-center justify-center gap-3 w-full">
-          <span className="text-base text-white/70">Total:</span>
+        <div className="flex items-center justify-center w-full">
+          <div className="flex items-center gap-3">
+            <span className="text-base text-white/70">Total:</span>
+            <button
+              type="button"
+              className="copyable text-2xl font-bold"
+              aria-label={`Copy total ${total}`}
+              onClick={() => handleCopy(total)}
+            >
+              {total.toLocaleString()}
+            </button>
+          </div>
           <button
             type="button"
-            className="copyable text-2xl font-bold"
-            aria-label={`Copy total ${total}`}
-            onClick={() => handleCopy(total)}
-          >
-            {total.toLocaleString()}
-          </button>
-          <button
-            type="button"
-            className="btn w-auto p-2"
+            className="btn w-auto p-2 ml-8"
             aria-label="Reset all quantities"
             onClick={resetAllQuantities}
           >
@@ -140,7 +150,7 @@ const PriceCalculator = ({
         <Toast toast={toast} />
       </section>
 
-      <div className="flex flex-col items-start mt-4">
+      <div className={sectionSideRightClass}>
         <button
           type="button"
           className={sideActionButtonClass}

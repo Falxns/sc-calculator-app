@@ -63,7 +63,7 @@ const ProfileToolbar = ({
   return (
     <>
       <div
-        className="flex flex-col gap-1.5 shrink-0 mt-4"
+        className="flex flex-col gap-1.5 shrink-0"
         style={{ width: SECTION_SIDE_WIDTH }}
       >
         <label className="sr-only" htmlFor="calculator-profile">

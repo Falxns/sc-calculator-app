@@ -4,7 +4,12 @@ import useLocalStorage from '../../hooks/useLocalStorage';
 import useToast from '../../hooks/useToast';
 import type { MessageBuilderState } from '../../types';
 import { copyToClipboard } from '../../utils/copyToClipboard';
-import { sectionGridClass, sectionGlassClass, sideActionButtonClass } from '../../constants/layout';
+import {
+  sectionWrapperClass,
+  sectionSideRightClass,
+  sectionGlassClass,
+  sideActionButtonClass,
+} from '../../constants/layout';
 import MessageComponent from '../MessageComponent/MessageComponent';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import PlusIcon from '../icons/PlusIcon';
@@ -65,8 +70,7 @@ const MessageBuilder = () => {
   };
 
   return (
-    <div className={sectionGridClass}>
-      <div aria-hidden />
+    <div className={sectionWrapperClass}>
       <section className={sectionGlassClass}>
         {builderState.messages.length === 0 ? (
           <p className="text-sm text-white/60 text-center py-6">
@@ -88,7 +92,8 @@ const MessageBuilder = () => {
 
         <Toast toast={toast} />
       </section>
-      <div className="flex flex-col items-start mt-4">
+
+      <div className={sectionSideRightClass}>
         <button
           type="button"
           className={sideActionButtonClass}
@@ -98,6 +103,7 @@ const MessageBuilder = () => {
           <PlusIcon className="w-6 h-6" />
         </button>
       </div>
+
       {createPortal(
         <ConfirmModal
           isOpen={pendingDeleteId !== null}
