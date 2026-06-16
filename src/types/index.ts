@@ -16,6 +16,17 @@ export interface CalculatorState {
   calculators: Calculator[];
 }
 
+export interface CalculatorProfile {
+  id: string;
+  name: string;
+  calculators: Calculator[];
+}
+
+export interface CalculatorProfilesState {
+  activeProfileId: string;
+  profiles: CalculatorProfile[];
+}
+
 export interface Calculator {
   id: string;
   materialId: string;

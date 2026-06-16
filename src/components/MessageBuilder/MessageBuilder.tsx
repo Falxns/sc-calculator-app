@@ -1,23 +1,50 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import useToast from '../../hooks/useToast';
-import type { MessageBuilderState } from '../../types';
+import type { Calculator, Material, MessageBuilderState } from '../../types';
+import { MESSAGES_STORAGE_KEY } from '../../utils/backupIo';
 import { copyToClipboard } from '../../utils/copyToClipboard';
+import {
+  buildRowInsertOptions,
+  resolveMessageTemplate,
+} from '../../utils/messageTemplate';
+import {
+  sectionWrapperClass,
+  sectionSideRightClass,
+  sectionGlassClass,
+  sideActionButtonClass,
+} from '../../constants/layout';
 import MessageComponent from '../MessageComponent/MessageComponent';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import PlusIcon from '../icons/PlusIcon';
 import Toast from '../Toast/Toast';
 
-const MessageBuilder = () => {
+interface MessageBuilderProps {
+  onImportRef: React.MutableRefObject<(state: MessageBuilderState) => void>;
+  calculatorRows: Calculator[];
+  materials: Material[];
+  calculatorTotal: number;
+}
+
+const MessageBuilder = ({
+  onImportRef,
+  calculatorRows,
+  materials,
+  calculatorTotal,
+}: MessageBuilderProps) => {
   const [builderState, setBuilderState] = useLocalStorage<MessageBuilderState>(
-    'messageBuilderState',
+    MESSAGES_STORAGE_KEY,
     {
       messages: [],
     }
   );
 
   const { toast, showToast } = useToast();
+  const rowOptions = useMemo(
+    () => buildRowInsertOptions(calculatorRows, materials),
+    [calculatorRows, materials]
+  );
 
   const handleAddMessage = () => {
     setBuilderState((prev) => ({
@@ -33,10 +60,28 @@ const MessageBuilder = () => {
     }));
   };
 
+  const handleSetMessageContent = (id: string, content: string) => {
+    setBuilderState((prev) => ({
+      ...prev,
+      messages: prev.messages.map((m) => (m.id === id ? { ...m, content } : m)),
+    }));
+  };
+
   const handleCopyMessage = async (content: string) => {
+    const { text, warnings } = resolveMessageTemplate(
+      content,
+      calculatorRows,
+      materials,
+      calculatorTotal
+    );
+
     try {
-      await copyToClipboard(content);
-      showToast('Copied!', 'success');
+      await copyToClipboard(text);
+      if (warnings.length) {
+        showToast(warnings[0], 'error');
+      } else {
+        showToast('Copied!', 'success');
+      }
     } catch {
       showToast('Failed to copy!', 'error');
     }
@@ -63,12 +108,17 @@ const MessageBuilder = () => {
     setPendingDeleteId(null);
   };
 
+  useEffect(() => {
+    onImportRef.current = setBuilderState;
+  });
+
   return (
-    <div className="flex items-start gap-2 w-full">
-      <section className="glass-container flex-col gap-3 flex-1 min-w-0">
+    <div className={sectionWrapperClass}>
+      <section className={sectionGlassClass}>
         {builderState.messages.length === 0 ? (
           <p className="text-sm text-white/60 text-center py-6">
-            No messages yet. Click &quot;Add message&quot; to get started.
+            No messages yet. Use + to add one. Insert row placeholders with {'{+}'} — copy
+            resolves them to [Material]price for in-game chat.
           </p>
         ) : (
           <div className="w-full">
@@ -76,7 +126,9 @@ const MessageBuilder = () => {
               <MessageComponent
                 key={message.id}
                 message={message}
+                rowOptions={rowOptions}
                 handleChangeMessage={handleChangeMessage}
+                handleSetMessageContent={handleSetMessageContent}
                 handleCopyMessage={handleCopyMessage}
                 handleDeleteMessage={requestDeleteMessage}
               />
@@ -86,14 +138,18 @@ const MessageBuilder = () => {
 
         <Toast toast={toast} />
       </section>
-      <button
-        type="button"
-        className="btn w-auto p-2.5 shrink-0 mt-4"
-        aria-label="Add message"
-        onClick={handleAddMessage}
-      >
-        <PlusIcon className="w-6 h-6" />
-      </button>
+
+      <div className={sectionSideRightClass}>
+        <button
+          type="button"
+          className={sideActionButtonClass}
+          aria-label="Add message"
+          onClick={handleAddMessage}
+        >
+          <PlusIcon className="w-6 h-6" />
+        </button>
+      </div>
+
       {createPortal(
         <ConfirmModal
           isOpen={pendingDeleteId !== null}

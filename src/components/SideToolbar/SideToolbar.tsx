@@ -1,8 +1,11 @@
 import { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Material } from '../../types';
+import type { AppBackup } from '../../utils/backupIo';
 import useToast from '../../hooks/useToast';
-import { downloadMaterialsJson, readMaterialsFromFile } from '../../utils/materialsIo';
+import { downloadFullBackupJson, readBackupFromFile } from '../../utils/backupIo';
 import Modal from '../Modal/Modal';
+import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import Toast from '../Toast/Toast';
 import SettingsIcon from '../icons/SettingsIcon';
 import DownloadIcon from '../icons/DownloadIcon';
@@ -14,6 +17,7 @@ interface SideToolbarProps {
   setMaterials: React.Dispatch<React.SetStateAction<{ materials: Material[] }>>;
   onMaterialRemoved: (materialId: string, remainingMaterials: Material[]) => void;
   onMaterialsImported: (materials: Material[]) => void;
+  onFullBackupImport: (backup: AppBackup) => void;
 }
 
 const toolbarButtonClass = 'btn w-auto p-2.5';
@@ -23,15 +27,17 @@ const SideToolbar = ({
   setMaterials,
   onMaterialRemoved,
   onMaterialsImported,
+  onFullBackupImport,
 }: SideToolbarProps) => {
   const [isManagerOpen, setIsManagerOpen] = useState(false);
+  const [pendingBackup, setPendingBackup] = useState<AppBackup | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast, showToast } = useToast();
 
   const handleExport = () => {
     try {
-      downloadMaterialsJson(materials);
-      showToast('Materials exported!', 'success');
+      downloadFullBackupJson();
+      showToast('Backup exported!', 'success');
     } catch {
       showToast('Export failed!', 'error');
     }
@@ -47,14 +53,28 @@ const SideToolbar = ({
     if (!file) return;
 
     try {
-      const imported = await readMaterialsFromFile(file);
-      setMaterials({ materials: imported });
-      onMaterialsImported(imported);
-      showToast('Materials imported!', 'success');
+      const result = await readBackupFromFile(file);
+
+      if (result.type === 'materials') {
+        setMaterials({ materials: result.materials });
+        onMaterialsImported(result.materials);
+        showToast('Materials imported!', 'success');
+        return;
+      }
+
+      setPendingBackup(result.backup);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Import failed!';
       showToast(message, 'error');
     }
+  };
+
+  const confirmFullImport = () => {
+    if (pendingBackup) {
+      onFullBackupImport(pendingBackup);
+      showToast('Backup imported!', 'success');
+    }
+    setPendingBackup(null);
   };
 
   return (
@@ -73,7 +93,7 @@ const SideToolbar = ({
         <button
           type="button"
           className={toolbarButtonClass}
-          aria-label="Export materials as JSON"
+          aria-label="Export full backup as JSON"
           onClick={handleExport}
         >
           <DownloadIcon className="w-6 h-6" />
@@ -81,7 +101,7 @@ const SideToolbar = ({
         <button
           type="button"
           className={toolbarButtonClass}
-          aria-label="Import materials from JSON"
+          aria-label="Import backup from JSON"
           onClick={handleImportClick}
         >
           <UploadIcon className="w-6 h-6" />
@@ -102,6 +122,17 @@ const SideToolbar = ({
           onMaterialRemoved={onMaterialRemoved}
         />
       </Modal>
+
+      {createPortal(
+        <ConfirmModal
+          isOpen={pendingBackup !== null}
+          message="Import backup? This replaces materials, profiles, and messages."
+          confirmLabel="Import"
+          onConfirm={confirmFullImport}
+          onCancel={() => setPendingBackup(null)}
+        />,
+        document.body
+      )}
 
       <Toast toast={toast} />
     </>

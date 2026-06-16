@@ -5,8 +5,11 @@ import MessageBuilder from './components/MessageBuilder/MessageBuilder';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import SideToolbar from './components/SideToolbar/SideToolbar';
 import useMaterials from './hooks/useMaterials';
+import useCalculatorProfiles from './hooks/useCalculatorProfiles';
 import { DEFAULT_MATERIALS } from './constants/materials';
-import type { Material } from './types';
+import type { Material, MessageBuilderState } from './types';
+import type { AppBackup } from './utils/backupIo';
+import { normalizeProfilesState } from './utils/calculatorProfiles';
 
 const App = () => {
   const [materialsState, setMaterialsState] = useMaterials();
@@ -15,6 +18,32 @@ const App = () => {
     (materialId: string, remainingMaterials: Material[]) => void
   >(() => {});
   const onMaterialsImportedRef = useRef<(materials: Material[]) => void>(() => {});
+  const onMessagesImportRef = useRef<(state: MessageBuilderState) => void>(() => {});
+
+  const {
+    calculatorState,
+    setCalculatorState,
+    setProfilesState,
+    profiles,
+    activeProfileId,
+    switchProfile,
+    addProfile,
+    deleteProfile,
+    handleMaterialRemoved,
+    handleMaterialsImported,
+    suggestProfileName,
+  } = useCalculatorProfiles(materials);
+
+  const handleFullBackupImport = (backup: AppBackup) => {
+    setMaterialsState({ materials: backup.materials });
+    setProfilesState(normalizeProfilesState(backup.profiles, backup.materials));
+    onMessagesImportRef.current(backup.messages);
+  };
+
+  const calculatorTotal = calculatorState.calculators.reduce(
+    (acc, calc) => acc + calc.price * calc.quantity,
+    0
+  );
 
   return (
     <ErrorBoundary>
@@ -23,10 +52,25 @@ const App = () => {
         <main className="flex flex-col gap-4 w-full max-w-4xl mx-auto">
           <PriceCalculator
             materials={materials}
+            calculatorState={calculatorState}
+            setCalculatorState={setCalculatorState}
+            profiles={profiles}
+            activeProfileId={activeProfileId}
+            onSwitchProfile={switchProfile}
+            onAddProfile={addProfile}
+            onDeleteProfile={deleteProfile}
+            suggestProfileName={suggestProfileName}
             onMaterialRemovedRef={onMaterialRemovedRef}
             onMaterialsImportedRef={onMaterialsImportedRef}
+            handleMaterialRemoved={handleMaterialRemoved}
+            handleMaterialsImported={handleMaterialsImported}
           />
-          <MessageBuilder />
+          <MessageBuilder
+            onImportRef={onMessagesImportRef}
+            calculatorRows={calculatorState.calculators}
+            materials={materials}
+            calculatorTotal={calculatorTotal}
+          />
         </main>
         <SideToolbar
           materials={materials}
@@ -37,6 +81,7 @@ const App = () => {
           onMaterialsImported={(importedMaterials) =>
             onMaterialsImportedRef.current(importedMaterials)
           }
+          onFullBackupImport={handleFullBackupImport}
         />
       </div>
     </ErrorBoundary>
