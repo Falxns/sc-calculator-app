@@ -40,6 +40,11 @@ const App = () => {
     onMessagesImportRef.current(backup.messages);
   };
 
+  const calculatorTotal = calculatorState.calculators.reduce(
+    (acc, calc) => acc + calc.price * calc.quantity,
+    0
+  );
+
   return (
     <ErrorBoundary>
       <div className="flex flex-col gap-4">
@@ -60,7 +65,12 @@ const App = () => {
             handleMaterialRemoved={handleMaterialRemoved}
             handleMaterialsImported={handleMaterialsImported}
           />
-          <MessageBuilder onImportRef={onMessagesImportRef} />
+          <MessageBuilder
+            onImportRef={onMessagesImportRef}
+            calculatorRows={calculatorState.calculators}
+            materials={materials}
+            calculatorTotal={calculatorTotal}
+          />
         </main>
         <SideToolbar
           materials={materials}

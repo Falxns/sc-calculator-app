@@ -20,7 +20,9 @@ A single-page app for quick material price calculations and copy-paste trade mes
 ### Message builder
 
 - **Multiple messages** — Text blocks for quick copy-paste (trade ads, whispers, etc.).
-- **Edit & copy** — Expand-on-focus textarea; one-click copy to clipboard.
+- **Row placeholders** — Type `{1}`, `{2}`, or use `{+}` to insert from the active calculator profile.
+- **Copy resolves for game chat** — `{1}` → `[MaterialName]price` (brackets highlight items in Stalcraft chat). `{total}` → sum from calculator.
+- **Edit & copy** — Expand-on-focus textarea; copy outputs resolved text, not raw placeholders.
 - **Delete** — Remove a message with confirmation.
 
 ### Data & backup

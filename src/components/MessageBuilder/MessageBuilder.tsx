@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import useToast from '../../hooks/useToast';
-import type { MessageBuilderState } from '../../types';
+import type { Calculator, Material, MessageBuilderState } from '../../types';
 import { MESSAGES_STORAGE_KEY } from '../../utils/backupIo';
 import { copyToClipboard } from '../../utils/copyToClipboard';
+import {
+  buildRowInsertOptions,
+  resolveMessageTemplate,
+} from '../../utils/messageTemplate';
 import {
   sectionWrapperClass,
   sectionSideRightClass,
@@ -18,9 +22,17 @@ import Toast from '../Toast/Toast';
 
 interface MessageBuilderProps {
   onImportRef: React.MutableRefObject<(state: MessageBuilderState) => void>;
+  calculatorRows: Calculator[];
+  materials: Material[];
+  calculatorTotal: number;
 }
 
-const MessageBuilder = ({ onImportRef }: MessageBuilderProps) => {
+const MessageBuilder = ({
+  onImportRef,
+  calculatorRows,
+  materials,
+  calculatorTotal,
+}: MessageBuilderProps) => {
   const [builderState, setBuilderState] = useLocalStorage<MessageBuilderState>(
     MESSAGES_STORAGE_KEY,
     {
@@ -29,6 +41,10 @@ const MessageBuilder = ({ onImportRef }: MessageBuilderProps) => {
   );
 
   const { toast, showToast } = useToast();
+  const rowOptions = useMemo(
+    () => buildRowInsertOptions(calculatorRows, materials),
+    [calculatorRows, materials]
+  );
 
   const handleAddMessage = () => {
     setBuilderState((prev) => ({
@@ -44,10 +60,28 @@ const MessageBuilder = ({ onImportRef }: MessageBuilderProps) => {
     }));
   };
 
+  const handleSetMessageContent = (id: string, content: string) => {
+    setBuilderState((prev) => ({
+      ...prev,
+      messages: prev.messages.map((m) => (m.id === id ? { ...m, content } : m)),
+    }));
+  };
+
   const handleCopyMessage = async (content: string) => {
+    const { text, warnings } = resolveMessageTemplate(
+      content,
+      calculatorRows,
+      materials,
+      calculatorTotal
+    );
+
     try {
-      await copyToClipboard(content);
-      showToast('Copied!', 'success');
+      await copyToClipboard(text);
+      if (warnings.length) {
+        showToast(warnings[0], 'error');
+      } else {
+        showToast('Copied!', 'success');
+      }
     } catch {
       showToast('Failed to copy!', 'error');
     }
@@ -83,7 +117,8 @@ const MessageBuilder = ({ onImportRef }: MessageBuilderProps) => {
       <section className={sectionGlassClass}>
         {builderState.messages.length === 0 ? (
           <p className="text-sm text-white/60 text-center py-6">
-            No messages yet. Click &quot;Add message&quot; to get started.
+            No messages yet. Use + to add one. Insert row placeholders with {'{+}'} — copy
+            resolves them to [Material]price for in-game chat.
           </p>
         ) : (
           <div className="w-full">
@@ -91,7 +126,9 @@ const MessageBuilder = ({ onImportRef }: MessageBuilderProps) => {
               <MessageComponent
                 key={message.id}
                 message={message}
+                rowOptions={rowOptions}
                 handleChangeMessage={handleChangeMessage}
+                handleSetMessageContent={handleSetMessageContent}
                 handleCopyMessage={handleCopyMessage}
                 handleDeleteMessage={requestDeleteMessage}
               />
