@@ -4,6 +4,7 @@ import useLocalStorage from '../../hooks/useLocalStorage';
 import useToast from '../../hooks/useToast';
 import type { MessageBuilderState } from '../../types';
 import { copyToClipboard } from '../../utils/copyToClipboard';
+import { sectionGridClass, sectionGlassClass, sideActionButtonClass } from '../../constants/layout';
 import MessageComponent from '../MessageComponent/MessageComponent';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import PlusIcon from '../icons/PlusIcon';
@@ -64,8 +65,9 @@ const MessageBuilder = () => {
   };
 
   return (
-    <div className="flex items-start gap-2 w-full">
-      <section className="glass-container flex-col gap-3 flex-1 min-w-0">
+    <div className={sectionGridClass}>
+      <div aria-hidden />
+      <section className={sectionGlassClass}>
         {builderState.messages.length === 0 ? (
           <p className="text-sm text-white/60 text-center py-6">
             No messages yet. Click &quot;Add message&quot; to get started.
@@ -86,14 +88,16 @@ const MessageBuilder = () => {
 
         <Toast toast={toast} />
       </section>
-      <button
-        type="button"
-        className="btn w-auto p-2.5 shrink-0 mt-4"
-        aria-label="Add message"
-        onClick={handleAddMessage}
-      >
-        <PlusIcon className="w-6 h-6" />
-      </button>
+      <div className="flex flex-col items-start mt-4">
+        <button
+          type="button"
+          className={sideActionButtonClass}
+          aria-label="Add message"
+          onClick={handleAddMessage}
+        >
+          <PlusIcon className="w-6 h-6" />
+        </button>
+      </div>
       {createPortal(
         <ConfirmModal
           isOpen={pendingDeleteId !== null}

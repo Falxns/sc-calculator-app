@@ -1,71 +1,49 @@
 import { useEffect } from 'react';
-import useLocalStorage from '../../hooks/useLocalStorage';
 import useToast from '../../hooks/useToast';
-import {
-  createCalculator,
-  createDefaultCalculators,
-  DEFAULT_MATERIALS,
-} from '../../constants/materials';
-import type { Calculator, CalculatorState, Material } from '../../types';
+import { createCalculator, DEFAULT_MATERIALS } from '../../constants/materials';
+import { sectionGridClass, sectionGlassClass, sideActionButtonClass } from '../../constants/layout';
+import type { CalculatorProfile, CalculatorState, Material } from '../../types';
 import { copyToClipboard } from '../../utils/copyToClipboard';
 import CalculatorRow from '../CalculatorRow/CalculatorRow';
+import ProfileToolbar from '../ProfileToolbar/ProfileToolbar';
 import ResetIcon from '../icons/ResetIcon';
 import PlusIcon from '../icons/PlusIcon';
 import Toast from '../Toast/Toast';
 
-/** Migrate legacy calculator rows that used `imgSrc` instead of `materialId`. */
-const migrateCalculators = (raw: unknown, materials: Material[]): Calculator[] => {
-  if (!Array.isArray(raw)) return createDefaultCalculators(materials);
-
-  const materialIds = materials.map((m) => m.id);
-  const fallbackId = materialIds[0] ?? '';
-
-  return raw.map((item) => {
-    const row = item as Record<string, unknown>;
-    const legacyId = String(row.materialId ?? row.imgSrc ?? '');
-    const materialId = materialIds.includes(legacyId) ? legacyId : fallbackId;
-    const material = materials.find((m) => m.id === materialId);
-
-    return {
-      id: String(row.id ?? crypto.randomUUID()),
-      materialId,
-      price: Number(row.price) || material?.defaultPrice || 0,
-      quantity: Number(row.quantity) || 0,
-    };
-  });
-};
-
-const deserializeCalculatorState =
-  (materials: Material[]) =>
-  (parsed: unknown): CalculatorState => {
-    const stored = parsed as Partial<CalculatorState> | null;
-    if (!stored?.calculators?.length) {
-      return { calculators: createDefaultCalculators(materials) };
-    }
-    return { calculators: migrateCalculators(stored.calculators, materials) };
-  };
-
 interface PriceCalculatorProps {
   materials: Material[];
+  calculatorState: CalculatorState;
+  setCalculatorState: React.Dispatch<React.SetStateAction<CalculatorState>>;
+  profiles: CalculatorProfile[];
+  activeProfileId: string;
+  onSwitchProfile: (profileId: string) => void;
+  onAddProfile: (name: string) => void;
+  onDeleteProfile: (profileId: string) => void;
+  suggestProfileName: () => string;
   onMaterialRemovedRef: React.MutableRefObject<
     (materialId: string, remainingMaterials: Material[]) => void
   >;
   onMaterialsImportedRef: React.MutableRefObject<(materials: Material[]) => void>;
+  handleMaterialRemoved: (materialId: string, remainingMaterials: Material[]) => void;
+  handleMaterialsImported: (materials: Material[]) => void;
 }
 
 const PriceCalculator = ({
   materials,
+  calculatorState,
+  setCalculatorState,
+  profiles,
+  activeProfileId,
+  onSwitchProfile,
+  onAddProfile,
+  onDeleteProfile,
+  suggestProfileName,
   onMaterialRemovedRef,
   onMaterialsImportedRef,
+  handleMaterialRemoved,
+  handleMaterialsImported,
 }: PriceCalculatorProps) => {
   const resolvedMaterials = materials.length ? materials : DEFAULT_MATERIALS;
-
-  const [calculatorState, setCalculatorState] = useLocalStorage<CalculatorState>(
-    'calculatorState',
-    { calculators: createDefaultCalculators(resolvedMaterials) },
-    deserializeCalculatorState(resolvedMaterials)
-  );
-
   const { toast, showToast } = useToast();
 
   const total = calculatorState.calculators.reduce(
@@ -103,43 +81,23 @@ const PriceCalculator = ({
     }));
   };
 
-  const handleMaterialRemoved = (materialId: string, remainingMaterials: Material[]) => {
-    const fallback = remainingMaterials[0];
-    if (!fallback) return;
-
-    setCalculatorState((prev) => ({
-      ...prev,
-      calculators: prev.calculators.map((calc) =>
-        calc.materialId === materialId
-          ? { ...calc, materialId: fallback.id, price: fallback.defaultPrice }
-          : calc
-      ),
-    }));
-  };
-
-  const handleMaterialsImported = (newMaterials: Material[]) => {
-    const ids = new Set(newMaterials.map((m) => m.id));
-    const fallback = newMaterials[0];
-    if (!fallback) return;
-
-    setCalculatorState((prev) => ({
-      ...prev,
-      calculators: prev.calculators.map((calc) =>
-        ids.has(calc.materialId)
-          ? calc
-          : { ...calc, materialId: fallback.id, price: fallback.defaultPrice }
-      ),
-    }));
-  };
-
   useEffect(() => {
     onMaterialRemovedRef.current = handleMaterialRemoved;
     onMaterialsImportedRef.current = handleMaterialsImported;
   });
 
   return (
-    <div className="flex items-start gap-2 w-full">
-      <section className="glass-container flex-col gap-3 flex-1 min-w-0">
+    <div className={sectionGridClass}>
+      <ProfileToolbar
+        profiles={profiles}
+        activeProfileId={activeProfileId}
+        onSwitch={onSwitchProfile}
+        onAdd={onAddProfile}
+        onDelete={onDeleteProfile}
+        suggestProfileName={suggestProfileName}
+      />
+
+      <section className={sectionGlassClass}>
         {calculatorState.calculators.length === 0 ? (
           <p className="text-sm text-white/60 text-center py-6">
             No rows yet. Use + to add a calculator row.
@@ -181,14 +139,17 @@ const PriceCalculator = ({
 
         <Toast toast={toast} />
       </section>
-      <button
-        type="button"
-        className="btn w-auto p-2.5 shrink-0 mt-4"
-        aria-label="Add row"
-        onClick={addRow}
-      >
-        <PlusIcon className="w-6 h-6" />
-      </button>
+
+      <div className="flex flex-col items-start mt-4">
+        <button
+          type="button"
+          className={sideActionButtonClass}
+          aria-label="Add row"
+          onClick={addRow}
+        >
+          <PlusIcon className="w-6 h-6" />
+        </button>
+      </div>
     </div>
   );
 };

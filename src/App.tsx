@@ -5,6 +5,7 @@ import MessageBuilder from './components/MessageBuilder/MessageBuilder';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import SideToolbar from './components/SideToolbar/SideToolbar';
 import useMaterials from './hooks/useMaterials';
+import useCalculatorProfiles from './hooks/useCalculatorProfiles';
 import { DEFAULT_MATERIALS } from './constants/materials';
 import type { Material } from './types';
 
@@ -16,6 +17,19 @@ const App = () => {
   >(() => {});
   const onMaterialsImportedRef = useRef<(materials: Material[]) => void>(() => {});
 
+  const {
+    calculatorState,
+    setCalculatorState,
+    profiles,
+    activeProfileId,
+    switchProfile,
+    addProfile,
+    deleteProfile,
+    handleMaterialRemoved,
+    handleMaterialsImported,
+    suggestProfileName,
+  } = useCalculatorProfiles(materials);
+
   return (
     <ErrorBoundary>
       <div className="flex flex-col gap-4">
@@ -23,8 +37,18 @@ const App = () => {
         <main className="flex flex-col gap-4 w-full max-w-4xl mx-auto">
           <PriceCalculator
             materials={materials}
+            calculatorState={calculatorState}
+            setCalculatorState={setCalculatorState}
+            profiles={profiles}
+            activeProfileId={activeProfileId}
+            onSwitchProfile={switchProfile}
+            onAddProfile={addProfile}
+            onDeleteProfile={deleteProfile}
+            suggestProfileName={suggestProfileName}
             onMaterialRemovedRef={onMaterialRemovedRef}
             onMaterialsImportedRef={onMaterialsImportedRef}
+            handleMaterialRemoved={handleMaterialRemoved}
+            handleMaterialsImported={handleMaterialsImported}
           />
           <MessageBuilder />
         </main>
