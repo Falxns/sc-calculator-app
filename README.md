@@ -1,6 +1,6 @@
 # Stalcraft:X Materials Calculator
 
-A small single-page app for quick material calculations and message templates while playing [Stalcraft](https://stalcraft.net/). Built with React, TypeScript, Vite, and Tailwind CSS.
+A single-page app for quick material price calculations and copy-paste trade messages while playing [Stalcraft](https://stalcraft.net/). Built with React, TypeScript, Vite, and Tailwind CSS.
 
 **[Live demo](https://falxns.github.io/sc-calculator-app/)**
 
@@ -10,26 +10,31 @@ A small single-page app for quick material calculations and message templates wh
 
 ### Materials calculator
 
-- **Multiple items** — Preset list of in-game materials (Slastena, Solevik, Kub, Limonnik, Spirten, Myatnoplod) with default prices.
-- **Per-row inputs** — Price and quantity for each item; subtotal per row.
-- **Global total** — Sum of all (price × quantity) at the bottom.
-- **Reset** — Clear quantity for a single row or reset all quantities at once.
-- **Persistence** — Calculator state (prices and quantities) saved in `localStorage`.
+- **Dynamic materials** — Built-in items plus custom materials (name, default price, optional icon).
+- **Calculator profiles** — Save multiple presets (e.g. farming run, crafting batch) and switch between them.
+- **Per-row inputs** — Material, price, and quantity; click subtotal to copy.
+- **Global total** — Sum of all rows; click to copy (raw number, no formatting).
+- **Reset** — Clear quantity on one row or reset all quantities at once.
+- **Add/remove rows** — Customize which materials appear in the active profile.
 
 ### Message builder
 
-- **Add messages** — Create multiple text blocks for quick copy-paste (e.g. trade messages).
-- **Edit & copy** — Edit any message and copy to clipboard with one click.
-- **Delete** — Remove a message with a confirmation modal (Escape to cancel).
-- **Persistence** — Messages saved in `localStorage`.
+- **Multiple messages** — Text blocks for quick copy-paste (trade ads, whispers, etc.).
+- **Edit & copy** — Expand-on-focus textarea; one-click copy to clipboard.
+- **Delete** — Remove a message with confirmation.
 
-### UI & UX
+### Data & backup
 
-- **Glassmorphism** — Frosted glass-style panels and inputs.
-- **Responsive** — Layout adapts to mobile and desktop.
-- **Toasts** — Feedback for copy and delete actions.
-- **Error boundary** — Fallback screen if something goes wrong, with "Try again".
-- **Accessibility** — Labels, ARIA, keyboard support (Escape closes modal).
+- **localStorage persistence** — Materials, profiles, calculator rows, and messages survive reloads.
+- **Full backup export/import** — Download or restore everything as `sc-calculator-backup-YYYY-MM-DD.json` (materials, profiles, messages).
+- **Materials-only import** — Older `sc-materials-*.json` files still import materials only.
+
+### UI
+
+- **Side toolbar** (top-right) — Manage materials, export backup, import backup.
+- **Profile toolbar** (left of calculator) — Switch, add, or delete profiles.
+- **Glassmorphism** dark theme with responsive layout.
+- **Toasts**, **error boundary**, keyboard support (Escape closes modals).
 
 ---
 
@@ -38,7 +43,7 @@ A small single-page app for quick material calculations and message templates wh
 - **React 19** + **TypeScript**
 - **Vite 7**
 - **Tailwind CSS 3**
-- **localStorage** for state persistence (no backend)
+- **localStorage** (no backend)
 
 ---
 
@@ -51,49 +56,76 @@ A small single-page app for quick material calculations and message templates wh
 
 ### Install
 
-    git clone https://github.com/Falxns/sc-calculator-app.git
-    cd sc-calculator-app
-    npm install
+```bash
+git clone https://github.com/Falxns/sc-calculator-app.git
+cd sc-calculator-app
+npm install
+```
 
 ### Development
 
-    npm run dev
+```bash
+npm run dev
+```
 
-Open [http://localhost:5173](http://localhost:5173).
+Open [http://localhost:5173/sc-calculator-app/](http://localhost:5173/sc-calculator-app/) (or the URL Vite prints).
 
-### Build
+### Build & deploy
 
-    npm run build
+```bash
+npm run build
+npm run deploy   # build + push to gh-pages branch
+```
 
-Output is in `dist/`.
+---
 
-### Preview production build
+## Backup format
 
-    npm run preview
+Full backup JSON (version 1):
+
+```json
+{
+  "version": 1,
+  "exportedAt": "2026-06-11T12:00:00.000Z",
+  "materials": [ ... ],
+  "profiles": {
+    "activeProfileId": "...",
+    "profiles": [ ... ]
+  },
+  "messages": {
+    "messages": [ ... ]
+  }
+}
+```
+
+Importing a full backup **replaces** all local data (confirmation shown). Importing a materials-only file updates materials and remaps calculator rows.
 
 ---
 
 ## Project structure
 
-    src/
-    ├── components/
-    │   ├── CalculatorRow/     # Single calculator row (price, quantity, subtotal, reset)
-    │   ├── ConfirmModal/      # Reusable confirmation dialog (e.g. delete message)
-    │   ├── ErrorBoundary/     # Catches render errors and shows fallback UI
-    │   ├── Header/            # App title and logo
-    │   ├── MessageBuilder/    # Message list, add, toast, delete modal
-    │   ├── MessageComponent/  # Single message (textarea, copy, delete)
-    │   ├── PriceCalculator/   # Calculator list and global total
-    │   └── icons/             # CopyIcon, TrashIcon, ResetIcon, LogoIcon
-    ├── hooks/
-    │   └── useLocalStorage.ts # Persist state to localStorage
-    ├── types/
-    │   └── index.ts           # CalculatorState, Message, etc.
-    ├── App.tsx
-    ├── main.tsx
-    └── index.css              # Tailwind + custom component classes
-    public/
-    └── assets/                # Item icons (PNG) and logo
+```
+src/
+├── components/
+│   ├── CalculatorRow/       # Single calculator row
+│   ├── MaterialManager/     # Add/remove materials (modal)
+│   ├── MessageBuilder/      # Message list
+│   ├── PriceCalculator/     # Calculator + profiles layout
+│   ├── ProfileToolbar/      # Profile switcher
+│   ├── SideToolbar/         # Materials modal + backup I/O
+│   └── icons/
+├── hooks/
+│   ├── useCalculatorProfiles.ts
+│   ├── useMaterials.ts
+│   └── useLocalStorage.ts
+├── utils/
+│   ├── backupIo.ts          # Full backup export/import
+│   ├── materialsIo.ts       # Materials-only JSON helpers
+│   └── calculatorProfiles.ts
+└── constants/
+    └── materials.ts         # Default in-game materials
+public/assets/               # Material PNG icons
+```
 
 ---
 

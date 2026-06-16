@@ -106,6 +106,7 @@ const useCalculatorProfiles = (materials: Material[]) => {
   return {
     calculatorState,
     setCalculatorState,
+    setProfilesState,
     profiles: profilesState.profiles,
     activeProfileId: profilesState.activeProfileId,
     switchProfile,

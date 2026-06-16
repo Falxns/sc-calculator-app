@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import useToast from '../../hooks/useToast';
 import type { MessageBuilderState } from '../../types';
+import { MESSAGES_STORAGE_KEY } from '../../utils/backupIo';
 import { copyToClipboard } from '../../utils/copyToClipboard';
 import {
   sectionWrapperClass,
@@ -15,9 +16,13 @@ import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import PlusIcon from '../icons/PlusIcon';
 import Toast from '../Toast/Toast';
 
-const MessageBuilder = () => {
+interface MessageBuilderProps {
+  onImportRef: React.MutableRefObject<(state: MessageBuilderState) => void>;
+}
+
+const MessageBuilder = ({ onImportRef }: MessageBuilderProps) => {
   const [builderState, setBuilderState] = useLocalStorage<MessageBuilderState>(
-    'messageBuilderState',
+    MESSAGES_STORAGE_KEY,
     {
       messages: [],
     }
@@ -68,6 +73,10 @@ const MessageBuilder = () => {
   const cancelDeleteMessage = () => {
     setPendingDeleteId(null);
   };
+
+  useEffect(() => {
+    onImportRef.current = setBuilderState;
+  });
 
   return (
     <div className={sectionWrapperClass}>

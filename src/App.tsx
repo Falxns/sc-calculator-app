@@ -7,7 +7,9 @@ import SideToolbar from './components/SideToolbar/SideToolbar';
 import useMaterials from './hooks/useMaterials';
 import useCalculatorProfiles from './hooks/useCalculatorProfiles';
 import { DEFAULT_MATERIALS } from './constants/materials';
-import type { Material } from './types';
+import type { Material, MessageBuilderState } from './types';
+import type { AppBackup } from './utils/backupIo';
+import { normalizeProfilesState } from './utils/calculatorProfiles';
 
 const App = () => {
   const [materialsState, setMaterialsState] = useMaterials();
@@ -16,10 +18,12 @@ const App = () => {
     (materialId: string, remainingMaterials: Material[]) => void
   >(() => {});
   const onMaterialsImportedRef = useRef<(materials: Material[]) => void>(() => {});
+  const onMessagesImportRef = useRef<(state: MessageBuilderState) => void>(() => {});
 
   const {
     calculatorState,
     setCalculatorState,
+    setProfilesState,
     profiles,
     activeProfileId,
     switchProfile,
@@ -29,6 +33,12 @@ const App = () => {
     handleMaterialsImported,
     suggestProfileName,
   } = useCalculatorProfiles(materials);
+
+  const handleFullBackupImport = (backup: AppBackup) => {
+    setMaterialsState({ materials: backup.materials });
+    setProfilesState(normalizeProfilesState(backup.profiles, backup.materials));
+    onMessagesImportRef.current(backup.messages);
+  };
 
   return (
     <ErrorBoundary>
@@ -50,7 +60,7 @@ const App = () => {
             handleMaterialRemoved={handleMaterialRemoved}
             handleMaterialsImported={handleMaterialsImported}
           />
-          <MessageBuilder />
+          <MessageBuilder onImportRef={onMessagesImportRef} />
         </main>
         <SideToolbar
           materials={materials}
@@ -61,6 +71,7 @@ const App = () => {
           onMaterialsImported={(importedMaterials) =>
             onMaterialsImportedRef.current(importedMaterials)
           }
+          onFullBackupImport={handleFullBackupImport}
         />
       </div>
     </ErrorBoundary>
