@@ -7,10 +7,12 @@ import {
 import {
   SortableContext,
   arrayMove,
+  rectSortingStrategy,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import useToast from '../../hooks/useToast';
 import useSortableSensors from '../../hooks/useSortableSensors';
+import useLocalStorage from '../../hooks/useLocalStorage';
 import { createCalculator, DEFAULT_MATERIALS } from '../../constants/materials';
 import {
   sectionWrapperClass,
@@ -20,8 +22,11 @@ import {
   sideActionButtonClass,
 } from '../../constants/layout';
 import type { CalculatorProfile, CalculatorState, Material } from '../../types';
+import type { CalculatorViewMode } from '../../types/calculatorView';
 import { copyToClipboard } from '../../utils/copyToClipboard';
 import CalculatorRow from '../CalculatorRow/CalculatorRow';
+import CalculatorGridTile from '../CalculatorGridTile/CalculatorGridTile';
+import CalculatorViewToggle from '../CalculatorViewToggle/CalculatorViewToggle';
 import ProfileToolbar from '../ProfileToolbar/ProfileToolbar';
 import ResetIcon from '../icons/ResetIcon';
 import PlusIcon from '../icons/PlusIcon';
@@ -63,6 +68,11 @@ const PriceCalculator = ({
   const resolvedMaterials = materials.length ? materials : DEFAULT_MATERIALS;
   const { toast, showToast } = useToast();
   const sensors = useSortableSensors();
+  const [viewMode, setViewMode] = useLocalStorage<CalculatorViewMode>(
+    'calculatorViewMode',
+    'list',
+    (parsed) => (parsed === 'grid' ? 'grid' : 'list')
+  );
 
   const total = calculatorState.calculators.reduce(
     (acc, calc) => acc + calc.price * calc.quantity,
@@ -131,6 +141,10 @@ const PriceCalculator = ({
       </div>
 
       <section className={sectionGlassClass}>
+        <div className="flex justify-end w-full">
+          <CalculatorViewToggle value={viewMode} onChange={setViewMode} />
+        </div>
+
         {calculatorState.calculators.length === 0 ? (
           <p className="text-sm text-white/60 text-center py-6">
             No rows yet. Use + to add a calculator row.
@@ -143,20 +157,33 @@ const PriceCalculator = ({
           >
             <SortableContext
               items={calculatorState.calculators.map((calc) => calc.id)}
-              strategy={verticalListSortingStrategy}
+              strategy={viewMode === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}
             >
-              <div className="w-full divide-y divide-white/10">
-                {calculatorState.calculators.map((calculator) => (
-                  <CalculatorRow
-                    key={calculator.id}
-                    materials={resolvedMaterials}
-                    setCalculatorState={setCalculatorState}
-                    calculator={calculator}
-                    onRemove={removeRow}
-                    onCopy={handleCopy}
-                  />
-                ))}
-              </div>
+              {viewMode === 'list' ? (
+                <div className="w-full divide-y divide-white/10">
+                  {calculatorState.calculators.map((calculator) => (
+                    <CalculatorRow
+                      key={calculator.id}
+                      materials={resolvedMaterials}
+                      setCalculatorState={setCalculatorState}
+                      calculator={calculator}
+                      onRemove={removeRow}
+                      onCopy={handleCopy}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(5.75rem,1fr))] gap-2 w-full">
+                  {calculatorState.calculators.map((calculator) => (
+                    <CalculatorGridTile
+                      key={calculator.id}
+                      materials={resolvedMaterials}
+                      setCalculatorState={setCalculatorState}
+                      calculator={calculator}
+                    />
+                  ))}
+                </div>
+              )}
             </SortableContext>
           </DndContext>
         )}
