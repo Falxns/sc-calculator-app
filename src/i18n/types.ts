@@ -37,6 +37,7 @@ export type TranslationKey =
   | 'calc.materialFor'
   | 'calc.priceFor'
   | 'calc.quantityFor'
+  | 'calc.changeMaterial'
   | 'calc.displayMode'
   | 'calc.list'
   | 'calc.listView'

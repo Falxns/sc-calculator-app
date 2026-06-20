@@ -38,6 +38,7 @@ const en: Translations = {
   'calc.materialFor': 'Material for {{name}}',
   'calc.priceFor': 'Price for {{name}}',
   'calc.quantityFor': 'Quantity for {{name}}',
+  'calc.changeMaterial': 'Change material',
   'calc.displayMode': 'Calculator display mode',
   'calc.list': 'List',
   'calc.listView': 'List view',

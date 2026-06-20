@@ -177,6 +177,7 @@ const PriceCalculator = ({
                       materials={resolvedMaterials}
                       setCalculatorState={setCalculatorState}
                       calculator={calculator}
+                      onRemove={removeRow}
                     />
                   ))}
                 </div>

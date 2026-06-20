@@ -38,6 +38,7 @@ const ru: Translations = {
   'calc.materialFor': 'Материал: {{name}}',
   'calc.priceFor': 'Цена для {{name}}',
   'calc.quantityFor': 'Количество для {{name}}',
+  'calc.changeMaterial': 'Сменить материал',
   'calc.displayMode': 'Режим отображения калькулятора',
   'calc.list': 'Список',
   'calc.listView': 'Режим списка',
