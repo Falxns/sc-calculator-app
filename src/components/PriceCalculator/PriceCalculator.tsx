@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -80,53 +80,107 @@ const PriceCalculator = ({
     (parsed) => (parsed === 'grid' ? 'grid' : 'list')
   );
 
-  const total = calculatorState.calculators.reduce(
-    (acc, calc) => acc + calc.price * calc.quantity,
-    0
+  const calculatorIds = useMemo(
+    () => calculatorState.calculators.map((calc) => calc.id),
+    [calculatorState.calculators]
   );
 
-  const handleCopy = async (value: number) => {
-    try {
-      await copyToClipboard(String(value));
-      showToast(t('toast.copied'), 'success');
-    } catch {
-      showToast(t('toast.copyFailed'), 'error');
-    }
-  };
+  const total = useMemo(
+    () =>
+      calculatorState.calculators.reduce(
+        (acc, calc) => acc + calc.price * calc.quantity,
+        0
+      ),
+    [calculatorState.calculators]
+  );
 
-  const addRow = () => {
+  const handleCopy = useCallback(
+    async (value: number) => {
+      try {
+        await copyToClipboard(String(value));
+        showToast(t('toast.copied'), 'success');
+      } catch {
+        showToast(t('toast.copyFailed'), 'error');
+      }
+    },
+    [showToast, t]
+  );
+
+  const updateField = useCallback(
+    (id: string, key: 'price' | 'quantity', value: number) => {
+      setCalculatorState((prev) => ({
+        ...prev,
+        calculators: prev.calculators.map((calc) =>
+          calc.id === id ? { ...calc, [key]: value } : calc
+        ),
+      }));
+    },
+    [setCalculatorState]
+  );
+
+  const updateMaterial = useCallback(
+    (id: string, materialId: string) => {
+      setCalculatorState((prev) => ({
+        ...prev,
+        calculators: prev.calculators.map((calc) =>
+          calc.id === id ? { ...calc, materialId } : calc
+        ),
+      }));
+    },
+    [setCalculatorState]
+  );
+
+  const resetQuantity = useCallback(
+    (id: string) => {
+      setCalculatorState((prev) => ({
+        ...prev,
+        calculators: prev.calculators.map((calc) =>
+          calc.id === id ? { ...calc, quantity: 0 } : calc
+        ),
+      }));
+    },
+    [setCalculatorState]
+  );
+
+  const addRow = useCallback(() => {
     setCalculatorState((prev) => ({
       ...prev,
       calculators: [...prev.calculators, createCalculator(resolvedMaterials)],
     }));
-  };
+  }, [resolvedMaterials, setCalculatorState]);
 
-  const removeRow = (id: string) => {
-    setCalculatorState((prev) => ({
-      ...prev,
-      calculators: prev.calculators.filter((calc) => calc.id !== id),
-    }));
-  };
+  const removeRow = useCallback(
+    (id: string) => {
+      setCalculatorState((prev) => ({
+        ...prev,
+        calculators: prev.calculators.filter((calc) => calc.id !== id),
+      }));
+    },
+    [setCalculatorState]
+  );
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
 
-    setCalculatorState((prev) => {
-      const oldIndex = prev.calculators.findIndex((calc) => calc.id === active.id);
-      const newIndex = prev.calculators.findIndex((calc) => calc.id === over.id);
-      if (oldIndex === -1 || newIndex === -1) return prev;
+      setCalculatorState((prev) => {
+        const oldIndex = prev.calculators.findIndex((calc) => calc.id === active.id);
+        const newIndex = prev.calculators.findIndex((calc) => calc.id === over.id);
+        if (oldIndex === -1 || newIndex === -1) return prev;
 
-      return { calculators: arrayMove(prev.calculators, oldIndex, newIndex) };
-    });
-  };
+        return { calculators: arrayMove(prev.calculators, oldIndex, newIndex) };
+      });
+    },
+    [setCalculatorState]
+  );
 
-  const resetAllQuantities = () => {
+  const resetAllQuantities = useCallback(() => {
     setCalculatorState((prev) => ({
       ...prev,
       calculators: prev.calculators.map((calc) => ({ ...calc, quantity: 0 })),
     }));
-  };
+  }, [setCalculatorState]);
 
   useEffect(() => {
     onMaterialRemovedRef.current = handleMaterialRemoved;
@@ -168,7 +222,7 @@ const PriceCalculator = ({
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={calculatorState.calculators.map((calc) => calc.id)}
+              items={calculatorIds}
               strategy={viewMode === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}
             >
               {viewMode === 'list' ? (
@@ -177,8 +231,10 @@ const PriceCalculator = ({
                     <CalculatorRow
                       key={calculator.id}
                       materials={resolvedMaterials}
-                      setCalculatorState={setCalculatorState}
                       calculator={calculator}
+                      onFieldChange={updateField}
+                      onMaterialChange={updateMaterial}
+                      onResetQuantity={resetQuantity}
                       onRemove={removeRow}
                       onCopy={handleCopy}
                     />
@@ -190,8 +246,9 @@ const PriceCalculator = ({
                     <CalculatorGridTile
                       key={calculator.id}
                       materials={resolvedMaterials}
-                      setCalculatorState={setCalculatorState}
                       calculator={calculator}
+                      onFieldChange={updateField}
+                      onMaterialChange={updateMaterial}
                       onRemove={removeRow}
                     />
                   ))}

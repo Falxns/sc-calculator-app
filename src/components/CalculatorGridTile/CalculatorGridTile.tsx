@@ -1,27 +1,29 @@
-import React from 'react';
+import { memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useLocale } from '../../context/LocaleContext';
 import EditIcon from '../icons/EditIcon';
 import TrashIcon from '../icons/TrashIcon';
 import MaterialSelect from '../MaterialSelect/MaterialSelect';
-import type { Calculator, CalculatorState, Material } from '../../types';
+import type { Calculator, Material } from '../../types';
 import { findMaterial, getMaterialImageSrc } from '../../utils/materialImage';
 
 interface CalculatorGridTileProps {
   materials: Material[];
   calculator: Calculator;
-  setCalculatorState: React.Dispatch<React.SetStateAction<CalculatorState>>;
+  onFieldChange: (id: string, key: 'price' | 'quantity', value: number) => void;
+  onMaterialChange: (id: string, materialId: string) => void;
   onRemove: (id: string) => void;
 }
 
 const tileActionClass =
-  'btn w-6 h-6 min-w-6 p-0 flex items-center justify-center opacity-70 hover:opacity-100';
+  'calc-btn w-6 h-6 min-w-6 p-0 flex items-center justify-center opacity-70 hover:opacity-100';
 
 const CalculatorGridTile = ({
   materials,
   calculator,
-  setCalculatorState,
+  onFieldChange,
+  onMaterialChange,
   onRemove,
 }: CalculatorGridTileProps) => {
   const { t } = useLocale();
@@ -60,28 +62,7 @@ const CalculatorGridTile = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>, key: 'price' | 'quantity') => {
     const raw = e.target.value;
     if (rejectRawInput(raw)) return;
-
-    const nextValue = raw === '' ? 0 : Number(raw);
-    setCalculatorState((prev) => ({
-      ...prev,
-      calculators: prev.calculators.map((calc) =>
-        calc.id === id ? { ...calc, [key]: nextValue } : calc
-      ),
-    }));
-  };
-
-  const handleMaterialChange = (nextMaterialId: string) => {
-    const nextMaterial = findMaterial(materials, nextMaterialId);
-    if (!nextMaterial) return;
-
-    setCalculatorState((prev) => ({
-      ...prev,
-      calculators: prev.calculators.map((calc) =>
-        calc.id === id
-          ? { ...calc, materialId: nextMaterial.id, price: nextMaterial.defaultPrice }
-          : calc
-      ),
-    }));
+    onFieldChange(id, key, raw === '' ? 0 : Number(raw));
   };
 
   return (
@@ -89,7 +70,7 @@ const CalculatorGridTile = ({
       ref={setNodeRef}
       style={style}
       title={materialName}
-      className={`glass-effect relative flex flex-col items-stretch gap-1 p-2 pt-1.5 min-w-0 ${
+      className={`calc-tile relative flex flex-col items-stretch gap-1 p-2 pt-1.5 min-w-0 ${
         isDragging ? 'relative shadow-lg' : ''
       } ${hasQuantity ? 'ring-1 ring-white/25' : ''}`}
     >
@@ -99,7 +80,7 @@ const CalculatorGridTile = ({
           value={materialId}
           ariaLabel={t('calc.materialFor', { name: materialName })}
           className="pointer-events-auto"
-          onChange={handleMaterialChange}
+          onChange={(nextMaterialId) => onMaterialChange(id, nextMaterialId)}
           renderTrigger={({ isOpen, toggle }) => (
             <button
               type="button"
@@ -143,7 +124,7 @@ const CalculatorGridTile = ({
       </button>
 
       <input
-        className="input py-1 px-1 text-xs text-center w-full min-w-0"
+        className="calc-control py-1 px-1 text-xs text-center w-full min-w-0"
         type="number"
         value={price === 0 ? '' : price}
         placeholder={t('common.price')}
@@ -152,7 +133,7 @@ const CalculatorGridTile = ({
         onKeyDown={excludeSpecialCharacters}
       />
       <input
-        className={`input py-1 px-1 text-xs text-center w-full min-w-0 ${
+        className={`calc-control py-1 px-1 text-xs text-center w-full min-w-0 ${
           hasQuantity ? 'ring-1 ring-white/30' : ''
         }`}
         type="number"
@@ -166,4 +147,4 @@ const CalculatorGridTile = ({
   );
 };
 
-export default CalculatorGridTile;
+export default memo(CalculatorGridTile);

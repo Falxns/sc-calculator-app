@@ -48,7 +48,8 @@ const MessageBuilder = ({
   const [builderState, setBuilderState] = useLocalStorage<MessageBuilderState>(
     MESSAGES_STORAGE_KEY,
     { messages: [] },
-    normalizeMessagesState
+    normalizeMessagesState,
+    400
   );
 
   const { showToast } = useToast();

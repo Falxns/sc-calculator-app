@@ -1,4 +1,4 @@
-import React from 'react';
+import { memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useLocale } from '../../context/LocaleContext';
@@ -6,13 +6,15 @@ import ResetIcon from '../icons/ResetIcon';
 import TrashIcon from '../icons/TrashIcon';
 import DragHandle from '../DragHandle/DragHandle';
 import MaterialSelect from '../MaterialSelect/MaterialSelect';
-import type { Calculator, CalculatorState, Material } from '../../types';
+import type { Calculator, Material } from '../../types';
 import { findMaterial, getMaterialImageSrc } from '../../utils/materialImage';
 
 interface CalculatorRowProps {
   materials: Material[];
-  setCalculatorState: React.Dispatch<React.SetStateAction<CalculatorState>>;
   calculator: Calculator;
+  onFieldChange: (id: string, key: 'price' | 'quantity', value: number) => void;
+  onMaterialChange: (id: string, materialId: string) => void;
+  onResetQuantity: (id: string) => void;
   onRemove: (id: string) => void;
   onCopy: (value: number) => void;
 }
@@ -20,7 +22,9 @@ interface CalculatorRowProps {
 const CalculatorRow = ({
   materials,
   calculator,
-  setCalculatorState,
+  onFieldChange,
+  onMaterialChange,
+  onResetQuantity,
   onRemove,
   onCopy,
 }: CalculatorRowProps) => {
@@ -60,37 +64,7 @@ const CalculatorRow = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>, key: 'price' | 'quantity') => {
     const raw = e.target.value;
     if (rejectRawInput(raw)) return;
-
-    const nextValue = raw === '' ? 0 : Number(raw);
-    setCalculatorState((prev) => ({
-      ...prev,
-      calculators: prev.calculators.map((calc) =>
-        calc.id === id ? { ...calc, [key]: nextValue } : calc
-      ),
-    }));
-  };
-
-  const handleMaterialChange = (nextMaterialId: string) => {
-    const nextMaterial = findMaterial(materials, nextMaterialId);
-    if (!nextMaterial) return;
-
-    setCalculatorState((prev) => ({
-      ...prev,
-      calculators: prev.calculators.map((calc) =>
-        calc.id === id
-          ? { ...calc, materialId: nextMaterial.id, price: nextMaterial.defaultPrice }
-          : calc
-      ),
-    }));
-  };
-
-  const resetQuantity = () => {
-    setCalculatorState((prev) => ({
-      ...prev,
-      calculators: prev.calculators.map((calc) =>
-        calc.id === id ? { ...calc, quantity: 0 } : calc
-      ),
-    }));
+    onFieldChange(id, key, raw === '' ? 0 : Number(raw));
   };
 
   return (
@@ -117,10 +91,10 @@ const CalculatorRow = ({
         value={materialId}
         ariaLabel={t('calc.materialFor', { name: materialName })}
         className="w-full min-w-[7rem] flex-1 sm:flex-none sm:min-w-0"
-        onChange={handleMaterialChange}
+        onChange={(nextMaterialId) => onMaterialChange(id, nextMaterialId)}
       />
       <input
-        className="input py-2 text-base text-center w-full min-w-[5rem] flex-1 sm:flex-none sm:min-w-0"
+        className="calc-control py-2 text-base text-center w-full min-w-[5rem] flex-1 sm:flex-none sm:min-w-0"
         type="number"
         value={price === 0 ? '' : price}
         placeholder={t('common.price')}
@@ -129,7 +103,7 @@ const CalculatorRow = ({
         onKeyDown={excludeSpecialCharacters}
       />
       <input
-        className="input py-2 text-base text-center w-full min-w-[4rem] flex-1 sm:flex-none sm:min-w-0"
+        className="calc-control py-2 text-base text-center w-full min-w-[4rem] flex-1 sm:flex-none sm:min-w-0"
         type="number"
         value={quantity === 0 ? '' : quantity}
         placeholder={t('common.qty')}
@@ -148,15 +122,15 @@ const CalculatorRow = ({
       <div className="flex items-center gap-1.5 shrink-0 ml-auto sm:ml-0">
         <button
           type="button"
-          className="btn w-auto p-1.5"
+          className="calc-btn w-auto p-1.5"
           aria-label={t('calc.resetQuantity')}
-          onClick={resetQuantity}
+          onClick={() => onResetQuantity(id)}
         >
           <ResetIcon className="w-4 h-4" />
         </button>
         <button
           type="button"
-          className="btn w-auto p-1.5"
+          className="calc-btn w-auto p-1.5"
           aria-label={t('calc.removeRow')}
           onClick={() => onRemove(id)}
         >
@@ -167,4 +141,4 @@ const CalculatorRow = ({
   );
 };
 
-export default CalculatorRow;
+export default memo(CalculatorRow);

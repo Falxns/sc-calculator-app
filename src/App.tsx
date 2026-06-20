@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useDeferredValue, useRef } from 'react';
 import Header from './components/Header/Header';
 import PriceCalculator from './components/PriceCalculator/PriceCalculator';
 import MessageBuilder from './components/MessageBuilder/MessageBuilder';
@@ -65,6 +65,9 @@ const App = () => {
     0
   );
 
+  const deferredCalculatorRows = useDeferredValue(calculatorState.calculators);
+  const deferredCalculatorTotal = useDeferredValue(calculatorTotal);
+
   return (
     <ErrorBoundary>
       <div className="flex flex-col gap-4">
@@ -89,9 +92,9 @@ const App = () => {
           />
           <MessageBuilder
             onImportRef={onMessagesImportRef}
-            calculatorRows={calculatorState.calculators}
+            calculatorRows={deferredCalculatorRows}
             materials={materials}
-            calculatorTotal={calculatorTotal}
+            calculatorTotal={deferredCalculatorTotal}
           />
         </main>
         <SideToolbar

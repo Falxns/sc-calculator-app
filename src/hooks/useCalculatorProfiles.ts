@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import useLocalStorage from './useLocalStorage';
 import { createDefaultCalculators, DEFAULT_MATERIALS } from '../constants/materials';
 import type { CalculatorProfile, CalculatorProfilesState, CalculatorState, Material } from '../types';
@@ -23,16 +23,20 @@ const useCalculatorProfiles = (materials: Material[]) => {
       const idMap = readMaterialIdRemap();
       const normalized = normalizeProfilesState(parsed, resolvedMaterials);
       return remapProfilesMaterialIds(normalized, idMap, resolvedMaterials);
-    }
+    },
+    400
   );
 
   const activeProfile =
     profilesState.profiles.find((p) => p.id === profilesState.activeProfileId) ??
     profilesState.profiles[0];
 
-  const calculatorState: CalculatorState = {
-    calculators: activeProfile?.calculators ?? createDefaultCalculators(resolvedMaterials),
-  };
+  const calculatorState = useMemo<CalculatorState>(
+    () => ({
+      calculators: activeProfile?.calculators ?? createDefaultCalculators(resolvedMaterials),
+    }),
+    [activeProfile]
+  );
 
   const setCalculatorState = useCallback(
     (action: React.SetStateAction<CalculatorState>) => {

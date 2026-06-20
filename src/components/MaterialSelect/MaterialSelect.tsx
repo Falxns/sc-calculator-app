@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Material } from '../../types';
 import { findMaterial } from '../../utils/materialImage';
 import DropdownMenu from '../DropdownMenu/DropdownMenu';
@@ -43,7 +44,7 @@ const MaterialSelect = ({
         ) : (
           <button
             type="button"
-            className={`input select-dropdown-trigger block w-full min-w-0 text-left ${triggerClassName}`}
+            className={`calc-control py-2 px-3 select-dropdown-trigger block w-full min-w-0 text-left ${triggerClassName}`}
             aria-label={ariaLabel}
             aria-haspopup="listbox"
             aria-expanded={isOpen}
@@ -80,4 +81,4 @@ const MaterialSelect = ({
   );
 };
 
-export default MaterialSelect;
+export default memo(MaterialSelect);
