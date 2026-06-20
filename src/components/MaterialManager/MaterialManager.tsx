@@ -1,16 +1,21 @@
 import { useState } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { createUniqueMaterialId } from '../../constants/materials';
+import useSortableSensors from '../../hooks/useSortableSensors';
 import type { Material } from '../../types';
 import { getMaterialImageSrc } from '../../utils/materialImage';
+import { MAX_ICON_BYTES, readFileAsDataUrl } from '../../utils/readFileAsDataUrl';
+import MaterialSortableRow from './MaterialSortableRow';
 import PlusIcon from '../icons/PlusIcon';
-
-const readFileAsDataUrl = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 
 interface MaterialManagerProps {
   materials: Material[];
@@ -18,19 +23,56 @@ interface MaterialManagerProps {
   onMaterialRemoved: (materialId: string, remainingMaterials: Material[]) => void;
 }
 
+type EditImageState = 'unchanged' | 'cleared' | string;
+
 const MaterialManager = ({
   materials,
   setMaterials,
   onMaterialRemoved,
 }: MaterialManagerProps) => {
+  const sensors = useSortableSensors();
+
   const [label, setLabel] = useState('');
   const [defaultPrice, setDefaultPrice] = useState('');
   const [imageData, setImageData] = useState<string | undefined>();
 
-  const resetForm = () => {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editImage, setEditImage] = useState<EditImageState>('unchanged');
+
+  const resetAddForm = () => {
     setLabel('');
     setDefaultPrice('');
     setImageData(undefined);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditLabel('');
+    setEditPrice('');
+    setEditImage('unchanged');
+  };
+
+  const startEdit = (material: Material) => {
+    setEditingId(material.id);
+    setEditLabel(material.label);
+    setEditPrice(String(material.defaultPrice));
+    setEditImage('unchanged');
+  };
+
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    onLoaded: (dataUrl: string) => void
+  ) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > MAX_ICON_BYTES) {
+      alert('Image is too large. Please use an icon under 200 KB.');
+      return;
+    }
+    onLoaded(await readFileAsDataUrl(file));
   };
 
   const handleAddMaterial = () => {
@@ -53,63 +95,157 @@ const MaterialManager = ({
     setMaterials((prev) => ({
       materials: [...prev.materials, newMaterial],
     }));
-    resetForm();
+    resetAddForm();
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingId) return;
+
+    const trimmedLabel = editLabel.trim();
+    const price = editPrice === '' ? 0 : Number(editPrice);
+    if (!trimmedLabel || Number.isNaN(price) || price < 0) return;
+
+    setMaterials((prev) => ({
+      materials: prev.materials.map((material) => {
+        if (material.id !== editingId) return material;
+
+        const updated: Material = {
+          ...material,
+          label: trimmedLabel,
+          defaultPrice: price,
+        };
+
+        if (editImage === 'cleared') {
+          delete updated.imageData;
+        } else if (editImage !== 'unchanged') {
+          updated.imageData = editImage;
+        }
+
+        return updated;
+      }),
+    }));
+    cancelEdit();
   };
 
   const handleRemoveMaterial = (materialId: string) => {
     if (materials.length <= 1) return;
+    if (editingId === materialId) cancelEdit();
     const remainingMaterials = materials.filter((m) => m.id !== materialId);
     setMaterials({ materials: remainingMaterials });
     onMaterialRemoved(materialId, remainingMaterials);
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 200_000) {
-      alert('Image is too large. Please use an icon under 200 KB.');
-      e.target.value = '';
-      return;
-    }
-    setImageData(await readFileAsDataUrl(file));
-    e.target.value = '';
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || editingId) return;
+
+    setMaterials((prev) => {
+      const oldIndex = prev.materials.findIndex((m) => m.id === active.id);
+      const newIndex = prev.materials.findIndex((m) => m.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+
+      return { materials: arrayMove(prev.materials, oldIndex, newIndex) };
+    });
   };
+
+  const editingMaterial = materials.find((m) => m.id === editingId);
+  const editPreviewSrc =
+    editImage === 'unchanged'
+      ? getMaterialImageSrc(editingMaterial)
+      : editImage === 'cleared'
+        ? editingMaterial?.imgSrc
+          ? getMaterialImageSrc({ ...editingMaterial, imageData: undefined })
+          : ''
+        : editImage;
+
+  const materialIds = materials.map((m) => m.id);
+  const dragDisabled = editingId !== null;
 
   return (
     <div className="flex flex-col gap-3 w-full">
-      <ul className="flex flex-col divide-y divide-white/10">
-        {materials.map((material) => (
-          <li
-            key={material.id}
-            className="flex items-center gap-2 text-sm py-2 first:pt-0 last:pb-0"
-          >
-            {getMaterialImageSrc(material) ? (
-              <img
-                src={getMaterialImageSrc(material)}
-                alt=""
-                className="w-6 h-6 shrink-0"
-              />
-            ) : (
-              <span className="w-6 h-6 shrink-0 rounded bg-white/10" />
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={materialIds} strategy={verticalListSortingStrategy}>
+          <ul className="flex flex-col divide-y divide-white/10">
+            {materials.map((material) =>
+              editingId === material.id ? (
+                <li key={material.id} className="py-2 first:pt-0 last:pb-0">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap items-end gap-2">
+                      <label className="btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center cursor-pointer overflow-hidden text-xs">
+                        {editPreviewSrc ? (
+                          <img
+                            src={editPreviewSrc}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-white/60">Icon</span>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageUpload(e, (data) => setEditImage(data))}
+                        />
+                      </label>
+                      {material.imageData && (
+                        <button
+                          type="button"
+                          className="btn w-auto py-1.5 px-2 text-xs"
+                          onClick={() => setEditImage('cleared')}
+                        >
+                          Clear icon
+                        </button>
+                      )}
+                      <input
+                        className="input py-1.5 px-2 text-sm flex-1 min-w-[6rem]"
+                        type="text"
+                        value={editLabel}
+                        aria-label="Material name"
+                        onChange={(e) => setEditLabel(e.target.value)}
+                      />
+                      <input
+                        className="input py-1.5 px-2 text-sm w-24 text-center"
+                        type="number"
+                        value={editPrice}
+                        aria-label="Default price"
+                        onChange={(e) => setEditPrice(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        type="button"
+                        className="btn w-auto py-1.5 px-3 text-sm"
+                        onClick={cancelEdit}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="btn w-auto py-1.5 px-3 text-sm"
+                        onClick={handleSaveEdit}
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ) : (
+                <MaterialSortableRow
+                  key={material.id}
+                  material={material}
+                  dragDisabled={dragDisabled}
+                  canRemove={materials.length > 1}
+                  onEdit={startEdit}
+                  onRemove={handleRemoveMaterial}
+                />
+              )
             )}
-            <span className="flex-1 min-w-0 truncate">{material.label}</span>
-            <span className="text-white/60 shrink-0">
-              {material.defaultPrice.toLocaleString()}
-            </span>
-            <button
-              type="button"
-              className="btn w-7 h-7 min-w-7 p-0 shrink-0 flex items-center justify-center text-base leading-none"
-              aria-label={`Remove ${material.label}`}
-              disabled={materials.length <= 1}
-              onClick={() => handleRemoveMaterial(material.id)}
-            >
-              ×
-            </button>
-          </li>
-        ))}
-      </ul>
+          </ul>
+        </SortableContext>
+      </DndContext>
 
-      <div className="flex flex-wrap items-end gap-2">
+      <div className="flex flex-wrap items-end gap-2 pt-1 border-t border-white/10">
         <label
           className="btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center cursor-pointer overflow-hidden text-xs"
           aria-label="Upload icon"
@@ -123,7 +259,7 @@ const MaterialManager = ({
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={handleImageUpload}
+            onChange={(e) => handleImageUpload(e, setImageData)}
           />
         </label>
         <input

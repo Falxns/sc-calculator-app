@@ -1,6 +1,9 @@
 import React from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import ResetIcon from '../icons/ResetIcon';
 import TrashIcon from '../icons/TrashIcon';
+import DragHandle from '../DragHandle/DragHandle';
 import type { Calculator, CalculatorState, Material } from '../../types';
 import { findMaterial, getMaterialImageSrc } from '../../utils/materialImage';
 
@@ -23,6 +26,23 @@ const CalculatorRow = ({
   const material = findMaterial(materials, materialId);
   const subtotal = price * quantity;
   const imageSrc = getMaterialImageSrc(material);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : undefined,
+    opacity: isDragging ? 0.85 : undefined,
+  };
 
   const rejectRawInput = (raw: string) =>
     raw.includes('-') || raw.includes('+') || raw.includes('e') || raw.includes('E');
@@ -70,7 +90,19 @@ const CalculatorRow = ({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 py-2 first:pt-0 last:pb-0 w-full sm:grid sm:grid-cols-[auto_minmax(7rem,1.2fr)_minmax(5rem,1fr)_minmax(4rem,0.8fr)_minmax(6rem,1.2fr)_auto] sm:gap-x-3 sm:gap-y-0">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex flex-wrap items-center gap-2 py-2 first:pt-0 last:pb-0 w-full sm:grid sm:grid-cols-[auto_auto_minmax(7rem,1.2fr)_minmax(5rem,1fr)_minmax(4rem,0.8fr)_minmax(6rem,1.2fr)_auto] sm:gap-x-3 sm:gap-y-0 ${
+        isDragging ? 'relative' : ''
+      }`}
+    >
+      <DragHandle
+        label={material?.label ?? `row ${id}`}
+        setActivatorNodeRef={setActivatorNodeRef}
+        listeners={listeners}
+        attributes={attributes}
+      />
       {imageSrc ? (
         <img src={imageSrc} alt={material?.label ?? materialId} className="w-9 h-9 shrink-0" />
       ) : (

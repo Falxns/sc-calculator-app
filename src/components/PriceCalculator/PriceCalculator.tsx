@@ -1,5 +1,16 @@
 import { useEffect } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import useToast from '../../hooks/useToast';
+import useSortableSensors from '../../hooks/useSortableSensors';
 import { createCalculator, DEFAULT_MATERIALS } from '../../constants/materials';
 import {
   sectionWrapperClass,
@@ -51,6 +62,7 @@ const PriceCalculator = ({
 }: PriceCalculatorProps) => {
   const resolvedMaterials = materials.length ? materials : DEFAULT_MATERIALS;
   const { toast, showToast } = useToast();
+  const sensors = useSortableSensors();
 
   const total = calculatorState.calculators.reduce(
     (acc, calc) => acc + calc.price * calc.quantity,
@@ -78,6 +90,19 @@ const PriceCalculator = ({
       ...prev,
       calculators: prev.calculators.filter((calc) => calc.id !== id),
     }));
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setCalculatorState((prev) => {
+      const oldIndex = prev.calculators.findIndex((calc) => calc.id === active.id);
+      const newIndex = prev.calculators.findIndex((calc) => calc.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+
+      return { calculators: arrayMove(prev.calculators, oldIndex, newIndex) };
+    });
   };
 
   const resetAllQuantities = () => {
@@ -111,18 +136,29 @@ const PriceCalculator = ({
             No rows yet. Use + to add a calculator row.
           </p>
         ) : (
-          <div className="w-full divide-y divide-white/10">
-            {calculatorState.calculators.map((calculator) => (
-              <CalculatorRow
-                key={calculator.id}
-                materials={resolvedMaterials}
-                setCalculatorState={setCalculatorState}
-                calculator={calculator}
-                onRemove={removeRow}
-                onCopy={handleCopy}
-              />
-            ))}
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={calculatorState.calculators.map((calc) => calc.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="w-full divide-y divide-white/10">
+                {calculatorState.calculators.map((calculator) => (
+                  <CalculatorRow
+                    key={calculator.id}
+                    materials={resolvedMaterials}
+                    setCalculatorState={setCalculatorState}
+                    calculator={calculator}
+                    onRemove={removeRow}
+                    onCopy={handleCopy}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
 
         <div className="flex items-center justify-center w-full">
