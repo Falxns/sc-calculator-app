@@ -40,7 +40,7 @@ const MessageSortableRow = ({
 }: MessageSortableRowProps) => {
   const { t } = useLocale();
   const { id, name, content } = message;
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
