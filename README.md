@@ -1,6 +1,6 @@
-# Stalcraft:X Materials Calculator
+# STALZONE Materials Calculator
 
-A single-page app for quick material price calculations and copy-paste trade messages while playing [Stalcraft](https://stalcraft.net/). Built with React, TypeScript, Vite, and Tailwind CSS.
+A single-page app for quick material price calculations and copy-paste trade messages while playing [STALZONE](https://stalzone.com/). Built with React, TypeScript, Vite, and Tailwind CSS.
 
 **[Live demo](https://falxns.github.io/sc-calculator-app/)**
 
@@ -21,7 +21,7 @@ A single-page app for quick material price calculations and copy-paste trade mes
 
 - **Multiple messages** — Text blocks for quick copy-paste (trade ads, whispers, etc.).
 - **Row placeholders** — Type `{1}`, `{2}`, or use `{+}` to insert from the active calculator profile.
-- **Copy resolves for game chat** — `{1}` → `[MaterialName]price` (brackets highlight items in Stalcraft chat). `{total}` → sum from calculator.
+- **Copy resolves for game chat** — `{1}` → `[MaterialName]price` (brackets highlight items in STALZONE chat). `{total}` → sum from calculator.
 - **Edit & copy** — Expand-on-focus textarea; copy outputs resolved text, not raw placeholders.
 - **Delete** — Remove a message with confirmation.
 
