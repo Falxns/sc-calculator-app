@@ -55,7 +55,7 @@ const MessageInsertMenu = ({ rows, onInsert }: MessageInsertMenuProps) => {
       {isOpen && (
         <ul
           role="listbox"
-          className="absolute right-0 top-full mt-1 z-20 min-w-[11rem] max-h-52 overflow-y-auto blur-effect py-1 shadow-lg"
+          className="absolute right-0 top-full mt-1 z-20 min-w-[11rem] max-h-52 overflow-y-auto dropdown-panel py-1"
         >
           {rows.length === 0 ? (
             <li className="px-3 py-2 text-xs text-white/50">{t('messages.noRows')}</li>

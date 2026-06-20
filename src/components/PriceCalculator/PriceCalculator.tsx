@@ -28,7 +28,8 @@ import { copyToClipboard } from '../../utils/copyToClipboard';
 import CalculatorRow from '../CalculatorRow/CalculatorRow';
 import CalculatorGridTile from '../CalculatorGridTile/CalculatorGridTile';
 import CalculatorViewToggle from '../CalculatorViewToggle/CalculatorViewToggle';
-import ProfileToolbar from '../ProfileToolbar/ProfileToolbar';
+import ProfileSelector from '../ProfileSelector/ProfileSelector';
+import ProfileSettings from '../ProfileSettings/ProfileSettings';
 import ResetIcon from '../icons/ResetIcon';
 import PlusIcon from '../icons/PlusIcon';
 import Toast from '../Toast/Toast';
@@ -42,6 +43,9 @@ interface PriceCalculatorProps {
   onSwitchProfile: (profileId: string) => void;
   onAddProfile: (name: string) => void;
   onDeleteProfile: (profileId: string) => void;
+  onRenameProfile: (profileId: string, name: string) => void;
+  onDuplicateProfile: (profileId: string, name: string) => void;
+  onReorderProfiles: (profiles: CalculatorProfile[]) => void;
   onMaterialRemovedRef: React.MutableRefObject<
     (materialId: string, remainingMaterials: Material[]) => void
   >;
@@ -59,6 +63,9 @@ const PriceCalculator = ({
   onSwitchProfile,
   onAddProfile,
   onDeleteProfile,
+  onRenameProfile,
+  onDuplicateProfile,
+  onReorderProfiles,
   onMaterialRemovedRef,
   onMaterialsImportedRef,
   handleMaterialRemoved,
@@ -130,18 +137,27 @@ const PriceCalculator = ({
   return (
     <div className={sectionWrapperClass}>
       <div className={sectionSideLeftClass}>
-        <ProfileToolbar
+        <ProfileSettings
           profiles={profiles}
           activeProfileId={activeProfileId}
-          onSwitch={onSwitchProfile}
-          onAdd={onAddProfile}
+          onReorder={onReorderProfiles}
+          onRename={onRenameProfile}
+          onDuplicate={onDuplicateProfile}
           onDelete={onDeleteProfile}
+          onAdd={onAddProfile}
         />
       </div>
 
       <section className={sectionGlassClass}>
-        <div className="flex justify-end w-full">
-          <CalculatorViewToggle value={viewMode} onChange={setViewMode} />
+        <div className="flex items-center gap-3 w-full">
+          <ProfileSelector
+            profiles={profiles}
+            activeProfileId={activeProfileId}
+            onSwitch={onSwitchProfile}
+          />
+          <div className="ml-auto shrink-0">
+            <CalculatorViewToggle value={viewMode} onChange={setViewMode} />
+          </div>
         </div>
 
         {calculatorState.calculators.length === 0 ? (

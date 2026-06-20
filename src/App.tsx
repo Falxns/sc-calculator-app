@@ -29,6 +29,9 @@ const App = () => {
     switchProfile,
     addProfile,
     deleteProfile,
+    renameProfile,
+    duplicateProfile,
+    reorderProfiles,
     handleMaterialRemoved,
     handleMaterialsImported,
   } = useCalculatorProfiles(materials);
@@ -58,6 +61,9 @@ const App = () => {
             onSwitchProfile={switchProfile}
             onAddProfile={addProfile}
             onDeleteProfile={deleteProfile}
+            onRenameProfile={renameProfile}
+            onDuplicateProfile={duplicateProfile}
+            onReorderProfiles={reorderProfiles}
             onMaterialRemovedRef={onMaterialRemovedRef}
             onMaterialsImportedRef={onMaterialsImportedRef}
             handleMaterialRemoved={handleMaterialRemoved}

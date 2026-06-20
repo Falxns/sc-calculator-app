@@ -74,6 +74,15 @@ export const createUniqueProfileName = (baseName: string, existingNames: string[
   return `${trimmed} ${i}`;
 };
 
+export const cloneProfile = (profile: CalculatorProfile, name: string): CalculatorProfile => ({
+  id: crypto.randomUUID(),
+  name,
+  calculators: profile.calculators.map((calc) => ({
+    ...calc,
+    id: crypto.randomUUID(),
+  })),
+});
+
 export const remapCalculatorsForMaterials = (
   calculators: Calculator[],
   newMaterials: Material[]

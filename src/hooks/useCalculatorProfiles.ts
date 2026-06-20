@@ -1,8 +1,9 @@
 import { useCallback } from 'react';
 import useLocalStorage from './useLocalStorage';
 import { createDefaultCalculators, DEFAULT_MATERIALS } from '../constants/materials';
-import type { CalculatorProfilesState, CalculatorState, Material } from '../types';
+import type { CalculatorProfile, CalculatorProfilesState, CalculatorState, Material } from '../types';
 import {
+  cloneProfile,
   createDefaultProfile,
   loadProfilesStateFromStorage,
   normalizeProfilesState,
@@ -75,6 +76,43 @@ const useCalculatorProfiles = (materials: Material[]) => {
     });
   };
 
+  const renameProfile = (profileId: string, name: string) => {
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+
+    setProfilesState((prev) => ({
+      ...prev,
+      profiles: prev.profiles.map((profile) =>
+        profile.id === profileId ? { ...profile, name: trimmedName } : profile
+      ),
+    }));
+  };
+
+  const duplicateProfile = (profileId: string, name: string) => {
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+
+    setProfilesState((prev) => {
+      const source = prev.profiles.find((p) => p.id === profileId);
+      if (!source) return prev;
+
+      const copy = cloneProfile(source, trimmedName);
+      return {
+        activeProfileId: copy.id,
+        profiles: [...prev.profiles, copy],
+      };
+    });
+  };
+
+  const reorderProfiles = (profiles: CalculatorProfile[]) => {
+    setProfilesState((prev) => {
+      if (profiles.length !== prev.profiles.length) return prev;
+      const ids = new Set(profiles.map((p) => p.id));
+      if (prev.profiles.some((p) => !ids.has(p.id))) return prev;
+      return { ...prev, profiles };
+    });
+  };
+
   const handleMaterialRemoved = (materialId: string, remainingMaterials: Material[]) => {
     const fallback = remainingMaterials[0];
     if (!fallback) return;
@@ -105,6 +143,9 @@ const useCalculatorProfiles = (materials: Material[]) => {
     switchProfile,
     addProfile,
     deleteProfile,
+    renameProfile,
+    duplicateProfile,
+    reorderProfiles,
     handleMaterialRemoved,
     handleMaterialsImported,
   };
