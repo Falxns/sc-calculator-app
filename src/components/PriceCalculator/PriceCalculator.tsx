@@ -10,7 +10,7 @@ import {
   rectSortingStrategy,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import useToast from '../../hooks/useToast';
+import { useToast } from '../../context/ToastContext';
 import useSortableSensors from '../../hooks/useSortableSensors';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import { useLocale } from '../../context/LocaleContext';
@@ -32,7 +32,6 @@ import ProfileSelector from '../ProfileSelector/ProfileSelector';
 import ProfileSettings from '../ProfileSettings/ProfileSettings';
 import ResetIcon from '../icons/ResetIcon';
 import PlusIcon from '../icons/PlusIcon';
-import Toast from '../Toast/Toast';
 
 interface PriceCalculatorProps {
   materials: Material[];
@@ -73,7 +72,7 @@ const PriceCalculator = ({
 }: PriceCalculatorProps) => {
   const { t } = useLocale();
   const resolvedMaterials = materials.length ? materials : DEFAULT_MATERIALS;
-  const { toast, showToast } = useToast();
+  const { showToast } = useToast();
   const sensors = useSortableSensors();
   const [viewMode, setViewMode] = useLocalStorage<CalculatorViewMode>(
     'calculatorViewMode',
@@ -224,7 +223,6 @@ const PriceCalculator = ({
           </button>
         </div>
 
-        <Toast toast={toast} />
       </section>
 
       <div className={sectionSideRightClass}>

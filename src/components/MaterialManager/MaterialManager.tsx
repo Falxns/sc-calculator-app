@@ -18,12 +18,12 @@ import { MAX_ICON_BYTES, readFileAsDataUrl } from '../../utils/readFileAsDataUrl
 import MaterialSortableRow from './MaterialSortableRow';
 import PlusIcon from '../icons/PlusIcon';
 import UploadIcon from '../icons/UploadIcon';
+import { useToast } from '../../context/ToastContext';
 
 interface MaterialManagerProps {
   materials: Material[];
   setMaterials: React.Dispatch<React.SetStateAction<{ materials: Material[] }>>;
   onMaterialRemoved: (materialId: string, remainingMaterials: Material[]) => void;
-  onNotify: (message: string, type: 'success' | 'error') => void;
 }
 
 type EditImageState = 'unchanged' | 'cleared' | string;
@@ -32,9 +32,9 @@ const MaterialManager = ({
   materials,
   setMaterials,
   onMaterialRemoved,
-  onNotify,
 }: MaterialManagerProps) => {
   const { t } = useLocale();
+  const { showToast } = useToast();
   const sensors = useSortableSensors();
 
   const [label, setLabel] = useState('');
@@ -74,7 +74,7 @@ const MaterialManager = ({
     e.target.value = '';
     if (!file) return;
     if (file.size > MAX_ICON_BYTES) {
-      onNotify(t('materials.imageTooLarge'), 'error');
+      showToast(t('materials.imageTooLarge'), 'error');
       return;
     }
     onLoaded(await readFileAsDataUrl(file));

@@ -13,7 +13,7 @@ import {
 import { useLocale } from '../../context/LocaleContext';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import useSortableSensors from '../../hooks/useSortableSensors';
-import useToast from '../../hooks/useToast';
+import { useToast } from '../../context/ToastContext';
 import type { Calculator, Material, MessageBuilderState } from '../../types';
 import { MESSAGES_STORAGE_KEY } from '../../utils/backupIo';
 import { copyToClipboard } from '../../utils/copyToClipboard';
@@ -29,7 +29,6 @@ import {
 import MessageSortableRow from '../MessageSortableRow/MessageSortableRow';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import PlusIcon from '../icons/PlusIcon';
-import Toast from '../Toast/Toast';
 
 interface MessageBuilderProps {
   onImportRef: React.MutableRefObject<(state: MessageBuilderState) => void>;
@@ -52,7 +51,7 @@ const MessageBuilder = ({
     normalizeMessagesState
   );
 
-  const { toast, showToast } = useToast();
+  const { showToast } = useToast();
   const rowOptions = useMemo(
     () => buildRowInsertOptions(calculatorRows, materials),
     [calculatorRows, materials]
@@ -198,7 +197,6 @@ const MessageBuilder = ({
           </DndContext>
         )}
 
-        <Toast toast={toast} />
       </section>
 
       <div className={sectionSideRightClass}>

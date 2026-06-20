@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocale } from '../../context/LocaleContext';
+import { useToast } from '../../context/ToastContext';
 import type { Material } from '../../types';
 import type { AppBackup } from '../../utils/backupIo';
-import useToast from '../../hooks/useToast';
+import type { BackupImportMode } from '../../utils/backupMerge';
 import { downloadFullBackupJson, readBackupFromFile } from '../../utils/backupIo';
 import Modal from '../Modal/Modal';
-import ConfirmModal from '../ConfirmModal/ConfirmModal';
-import Toast from '../Toast/Toast';
+import BackupImportModal from '../BackupImportModal/BackupImportModal';
 import LanguageToggle from '../LanguageToggle/LanguageToggle';
 import SettingsIcon from '../icons/SettingsIcon';
 import DownloadIcon from '../icons/DownloadIcon';
@@ -19,7 +19,7 @@ interface SideToolbarProps {
   setMaterials: React.Dispatch<React.SetStateAction<{ materials: Material[] }>>;
   onMaterialRemoved: (materialId: string, remainingMaterials: Material[]) => void;
   onMaterialsImported: (materials: Material[]) => void;
-  onFullBackupImport: (backup: AppBackup) => void;
+  onFullBackupImport: (backup: AppBackup, mode: BackupImportMode) => void;
 }
 
 const toolbarButtonClass = 'btn w-11 h-11 min-w-11 p-0 flex items-center justify-center';
@@ -32,10 +32,10 @@ const SideToolbar = ({
   onFullBackupImport,
 }: SideToolbarProps) => {
   const { t } = useLocale();
+  const { showToast } = useToast();
   const [isManagerOpen, setIsManagerOpen] = useState(false);
   const [pendingBackup, setPendingBackup] = useState<AppBackup | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast, showToast } = useToast();
 
   const handleExport = () => {
     try {
@@ -72,10 +72,13 @@ const SideToolbar = ({
     }
   };
 
-  const confirmFullImport = () => {
+  const confirmFullImport = (mode: BackupImportMode) => {
     if (pendingBackup) {
-      onFullBackupImport(pendingBackup);
-      showToast(t('toast.backupImported'), 'success');
+      onFullBackupImport(pendingBackup, mode);
+      showToast(
+        mode === 'merge' ? t('toast.backupMerged') : t('toast.backupImported'),
+        'success'
+      );
     }
     setPendingBackup(null);
   };
@@ -128,22 +131,18 @@ const SideToolbar = ({
           materials={materials}
           setMaterials={setMaterials}
           onMaterialRemoved={onMaterialRemoved}
-          onNotify={showToast}
         />
       </Modal>
 
       {createPortal(
-        <ConfirmModal
+        <BackupImportModal
           isOpen={pendingBackup !== null}
-          message={t('modal.importBackupConfirm')}
-          confirmLabel={t('common.import')}
+          backup={pendingBackup}
           onConfirm={confirmFullImport}
           onCancel={() => setPendingBackup(null)}
         />,
         document.body
       )}
-
-      <Toast toast={toast} />
     </>
   );
 };

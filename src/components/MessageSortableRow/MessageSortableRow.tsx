@@ -8,8 +8,8 @@ import {
   resolveMessageTemplate,
   type RowInsertOption,
 } from '../../utils/messageTemplate';
-import CopyIcon from '../icons/CopyIcon';
 import TrashIcon from '../icons/TrashIcon';
+import ChevronIcon from '../icons/ChevronIcon';
 import DragHandle from '../DragHandle/DragHandle';
 import MessageInsertMenu from '../MessageInsertMenu/MessageInsertMenu';
 
@@ -26,8 +26,6 @@ interface MessageSortableRowProps {
   onDelete: (id: string) => void;
 }
 
-const COLLAPSE_CHAR_LIMIT = 60;
-
 const MessageSortableRow = ({
   message,
   calculatorRows,
@@ -42,6 +40,7 @@ const MessageSortableRow = ({
 }: MessageSortableRowProps) => {
   const { t } = useLocale();
   const { id, name, content } = message;
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -61,9 +60,6 @@ const MessageSortableRow = ({
     zIndex: isDragging ? 1 : undefined,
     opacity: isDragging ? 0.85 : undefined,
   };
-
-  const isMultiline = content.includes('\n') || content.length > COLLAPSE_CHAR_LIMIT;
-  const isExpanded = isFocused || isMultiline || Boolean(name.trim());
 
   const { text: resolvedText, warnings } = useMemo(
     () => resolveMessageTemplate(content, calculatorRows, materials, calculatorTotal),
@@ -90,6 +86,7 @@ const MessageSortableRow = ({
   };
 
   const dragLabel = name.trim() || content.trim() || t('messages.suggestedName');
+  const displayName = name.trim() || t('messages.suggestedName');
 
   return (
     <div
@@ -97,65 +94,80 @@ const MessageSortableRow = ({
       style={style}
       className={`flex gap-2 w-full py-2.5 border-b border-white/10 last:border-b-0 ${
         isDragging ? 'relative' : ''
-      } ${isExpanded ? 'items-start' : 'items-center'}`}
+      } items-start`}
     >
       <DragHandle
         label={dragLabel}
         setActivatorNodeRef={setActivatorNodeRef}
         listeners={listeners}
         attributes={attributes}
-        className={isExpanded ? 'mt-1' : ''}
+        className="mt-1"
       />
 
       <div className="flex-1 min-w-0">
-        <input
-          className="input py-1 px-2 text-xs w-full mb-2"
-          type="text"
-          value={name}
-          placeholder={t('messages.namePlaceholder')}
-          aria-label={t('messages.nameLabel', { name: name || t('messages.suggestedName') })}
-          onChange={(e) => onNameChange(id, e.target.value)}
-        />
+        <div className="flex items-center gap-2 mb-2">
+          <button
+            type="button"
+            className="btn w-7 h-7 min-w-7 p-0 shrink-0 flex items-center justify-center"
+            aria-label={isCollapsed ? t('messages.expand') : t('messages.collapse')}
+            aria-expanded={!isCollapsed}
+            onClick={() => setIsCollapsed((collapsed) => !collapsed)}
+          >
+            <ChevronIcon className="w-4 h-4" expanded={!isCollapsed} />
+          </button>
+          <input
+            className="input py-1 px-2 text-xs flex-1 min-w-0"
+            type="text"
+            value={name}
+            placeholder={t('messages.namePlaceholder')}
+            aria-label={t('messages.nameLabel', { name: displayName })}
+            onChange={(e) => onNameChange(id, e.target.value)}
+          />
+        </div>
 
-        <textarea
-          ref={textareaRef}
-          className={`input w-full min-w-0 py-2 px-3 text-base transition-[min-height] duration-200 ${
-            isExpanded
-              ? 'min-h-[5.5rem] resize-y'
-              : 'min-h-[2.75rem] max-h-[2.75rem] overflow-hidden resize-none'
-          }`}
-          rows={isExpanded ? 3 : 1}
-          value={content}
-          onChange={(e) => onContentChange(id, e)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          placeholder={t('messages.placeholder')}
-          aria-label={t('messages.templateFor', { name: name || t('messages.suggestedName') })}
-        />
+        {!isCollapsed && (
+          <textarea
+            ref={textareaRef}
+            className="input w-full min-w-0 py-2 px-3 text-base min-h-[5.5rem] resize-y"
+            rows={3}
+            value={content}
+            onChange={(e) => onContentChange(id, e)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder={t('messages.placeholder')}
+            aria-label={t('messages.templateFor', { name: displayName })}
+          />
+        )}
 
-        <div className="mt-2 px-3 py-2 rounded-lg bg-black/25 border border-white/10">
-          <p className="text-xs text-white/50 mb-1">{t('messages.preview')}</p>
-          <p className="text-sm text-white/85 whitespace-pre-wrap break-words min-h-[1.25rem]">
+        <button
+          type="button"
+          disabled={!content.trim()}
+          className={`mt-2 w-full text-left px-3 py-2 rounded-lg border transition-colors ${
+            content.trim()
+              ? 'copyable bg-black/25 border-white/10 hover:bg-black/40 hover:border-white/25 cursor-pointer'
+              : 'bg-black/20 border-white/10 cursor-default opacity-80'
+          } ${isFocused && !isCollapsed ? 'ring-1 ring-white/15' : ''}`}
+          aria-label={t('messages.copyPreview')}
+          onClick={() => onCopy(content)}
+        >
+          <p className="text-xs text-white/50 mb-1 pointer-events-none">{t('messages.preview')}</p>
+          <p
+            className={`text-sm text-white/85 whitespace-pre-wrap break-words min-h-[1.25rem] pointer-events-none ${
+              isCollapsed ? 'line-clamp-2' : ''
+            }`}
+          >
             {content.trim() ? resolvedText : t('messages.previewEmpty')}
           </p>
           {warnings.length > 0 && (
-            <p className="mt-1.5 text-xs text-amber-300/90">
+            <p className="mt-1.5 text-xs text-amber-300/90 pointer-events-none">
               {formatTemplateWarning(warnings[0], t)}
             </p>
           )}
-        </div>
+        </button>
       </div>
 
-      <div className={`flex flex-col gap-1.5 shrink-0 ${isExpanded ? 'pt-1' : ''}`}>
-        <MessageInsertMenu rows={rowOptions} onInsert={insertToken} />
-        <button
-          type="button"
-          className="btn w-auto p-2"
-          aria-label={t('messages.copyResolved')}
-          onClick={() => onCopy(content)}
-        >
-          <CopyIcon className="w-4 h-4" />
-        </button>
+      <div className="flex flex-col gap-1.5 shrink-0 pt-1">
+        {!isCollapsed && <MessageInsertMenu rows={rowOptions} onInsert={insertToken} />}
         <button
           type="button"
           className="btn w-auto p-2"

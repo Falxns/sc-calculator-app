@@ -4,47 +4,57 @@ A single-page app for quick material price calculations and copy-paste trade mes
 
 **[Live demo](https://falxns.github.io/sc-calculator-app/)**
 
+Installable as a **PWA** — use “Install app” in the browser (or the in-app install hint on first visit).
+
 ---
 
 ## Features
 
 ### Materials calculator
 
-- **Dynamic materials** — Built-in items plus custom materials (name, default price, optional icon).
-- **Calculator profiles** — Save multiple presets (e.g. farming run, crafting batch) and switch between them.
-- **Per-row inputs** — Material, price, and quantity; click subtotal to copy.
-- **Global total** — Sum of all rows; click to copy (raw number, no formatting).
+- **Dynamic materials** — Built-in items plus custom materials (name, default price, optional icon upload).
+- **Calculator profiles** — Multiple presets (farming run, crafting batch, etc.) with rename, duplicate, drag reorder, add, and delete in a manage modal.
+- **Profile switcher** — Custom dropdown in the calculator header (auto-width, truncates long names).
+- **List / grid view** — Toggle layout; grid shows icon, price, and quantity in compact tiles.
+- **Per-row inputs** — Material picker (custom dropdown), price, quantity; click subtotal to copy.
+- **Drag reorder** — Reorder calculator rows in both list and grid modes.
+- **Global total** — Sum of all rows; click to copy (raw number).
 - **Reset** — Clear quantity on one row or reset all quantities at once.
-- **Add/remove rows** — Customize which materials appear in the active profile.
 
 ### Message builder
 
-- **Multiple messages** — Text blocks for quick copy-paste (trade ads, whispers, etc.).
-- **Row placeholders** — Type `{1}`, `{2}`, or use `{+}` to insert from the active calculator profile.
-- **Copy resolves for game chat** — `{1}` → `[MaterialName]price` (brackets highlight items in STALZONE chat). `{total}` → sum from calculator.
-- **Edit & copy** — Expand-on-focus textarea; copy outputs resolved text, not raw placeholders.
-- **Delete** — Remove a message with confirmation.
+- **Named templates** — Each block has an editable name (defaults: “Buy ad”, “Whisper”, …).
+- **Drag reorder** — Reorder message blocks like materials and profiles.
+- **Collapse / expand** — Fold templates to save space; preview stays visible when collapsed.
+- **Live preview** — Resolved in-game text updates as you type, with placeholder warnings.
+- **Copy from preview** — One-click copy of resolved text from the preview panel.
+- **Row placeholders** — `{1}`, `{2}`, `{total}`, or insert via `{+}` menu.
+- **Copy resolves for game chat** — `{1}` → `[MaterialName]price` (STALZONE chat highlight). `{total}` → calculator sum.
 
 ### Data & backup
 
-- **localStorage persistence** — Materials, profiles, calculator rows, and messages survive reloads.
-- **Full backup export/import** — Download or restore everything as `sc-calculator-backup-YYYY-MM-DD.json` (materials, profiles, messages).
-- **Materials-only import** — Older `sc-materials-*.json` files still import materials only.
+- **localStorage persistence** — Materials, profiles, calculator rows, messages, locale, and view mode survive reloads.
+- **Full backup export/import** — JSON file with materials, profiles, and messages.
+- **Import preview** — Shows counts before import; choose **merge** (combine data) or **replace** (overwrite all).
+- **Materials-only import** — Older `sc-materials-*.json` files still work.
+- **Cyrillic-safe material IDs** — Custom materials get transliterated slugs (e.g. `myakot-slasteny`).
 
-### UI
+### UI & i18n
 
-- **Side toolbar** (top-right) — Manage materials, export backup, import backup.
-- **Profile toolbar** (left of calculator) — Switch, add, or delete profiles.
-- **Glassmorphism** dark theme with responsive layout.
-- **Toasts**, **error boundary**, keyboard support (Escape closes modals).
+- **English / Russian** — Language toggle in the right sidebar; defaults to browser locale on first visit.
+- **Side toolbar** — Materials settings, backup export/import, language.
+- **Profile settings** — Gear button left of calculator opens profile manage modal.
+- **Glassmorphism** dark theme, responsive layout, global toasts.
+- **Keyboard** — Escape closes modals and dropdowns.
 
 ---
 
 ## Tech stack
 
 - **React 19** + **TypeScript**
-- **Vite 7**
+- **Vite 7** + **vite-plugin-pwa**
 - **Tailwind CSS 3**
+- **@dnd-kit** — drag-and-drop reordering
 - **localStorage** (no backend)
 
 ---
@@ -76,8 +86,11 @@ Open [http://localhost:5173/sc-calculator-app/](http://localhost:5173/sc-calcula
 
 ```bash
 npm run build
-npm run deploy   # build + push to gh-pages branch
+npm run preview   # test production build + PWA locally
+npm run deploy    # build + push to gh-pages branch
 ```
+
+PWA install prompts require **HTTPS** (GitHub Pages) or localhost via `npm run preview`.
 
 ---
 
@@ -95,12 +108,14 @@ Full backup JSON (version 1):
     "profiles": [ ... ]
   },
   "messages": {
-    "messages": [ ... ]
+    "messages": [
+      { "id": "...", "name": "Buy ad", "content": "..." }
+    ]
   }
 }
 ```
 
-Importing a full backup **replaces** all local data (confirmation shown). Importing a materials-only file updates materials and remaps calculator rows.
+**Merge** adds imported materials (by id), appends profiles and messages with unique names. **Replace** overwrites everything.
 
 ---
 
@@ -109,24 +124,35 @@ Importing a full backup **replaces** all local data (confirmation shown). Import
 ```
 src/
 ├── components/
-│   ├── CalculatorRow/       # Single calculator row
-│   ├── MaterialManager/     # Add/remove materials (modal)
-│   ├── MessageBuilder/      # Message list
-│   ├── PriceCalculator/     # Calculator + profiles layout
-│   ├── ProfileToolbar/      # Profile switcher
-│   ├── SideToolbar/         # Materials modal + backup I/O
-│   └── icons/
+│   ├── CalculatorRow/         # List view row
+│   ├── CalculatorGridTile/    # Grid view tile
+│   ├── DropdownMenu/          # Shared dropdown primitive
+│   ├── MaterialManager/       # Materials modal (drag reorder, edit)
+│   ├── MaterialSelect/        # Material picker dropdown
+│   ├── MessageBuilder/        # Message list
+│   ├── MessageSortableRow/    # Named template row + preview
+│   ├── ProfileManager/        # Profiles modal
+│   ├── ProfileSelector/       # Header profile dropdown
+│   ├── PriceCalculator/       # Calculator layout
+│   ├── SideToolbar/           # Materials + backup + language
+│   └── InstallAppBanner/      # PWA install hint
+├── context/
+│   ├── LocaleContext.tsx
+│   └── ToastContext.tsx       # Global toast notifications
 ├── hooks/
 │   ├── useCalculatorProfiles.ts
-│   ├── useMaterials.ts
+│   ├── useDropdown.ts
 │   └── useLocalStorage.ts
-├── utils/
-│   ├── backupIo.ts          # Full backup export/import
-│   ├── materialsIo.ts       # Materials-only JSON helpers
-│   └── calculatorProfiles.ts
-└── constants/
-    └── materials.ts         # Default in-game materials
-public/assets/               # Material PNG icons
+├── i18n/                      # en / ru translations
+└── utils/
+    ├── backupIo.ts            # Full backup export/import
+    ├── backupMerge.ts         # Merge vs replace logic
+    ├── messageTemplate.ts     # Placeholder resolution
+    └── slugify.ts             # Cyrillic → ASCII material ids
+public/
+├── assets/                    # Material PNG icons
+├── pwa-192.png                # PWA icons
+└── pwa-512.png
 ```
 
 ---
