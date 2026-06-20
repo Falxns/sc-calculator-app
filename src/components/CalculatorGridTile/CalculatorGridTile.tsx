@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useLocale } from '../../context/LocaleContext';
 import type { Calculator, CalculatorState, Material } from '../../types';
 import { findMaterial, getMaterialImageSrc } from '../../utils/materialImage';
 
@@ -15,8 +16,10 @@ const CalculatorGridTile = ({
   calculator,
   setCalculatorState,
 }: CalculatorGridTileProps) => {
+  const { t } = useLocale();
   const { id, materialId, price, quantity } = calculator;
   const material = findMaterial(materials, materialId);
+  const materialName = material?.label ?? materialId;
   const imageSrc = getMaterialImageSrc(material);
 
   const {
@@ -62,7 +65,7 @@ const CalculatorGridTile = ({
     <div
       ref={setNodeRef}
       style={style}
-      title={material?.label ?? materialId}
+      title={materialName}
       className={`glass-effect flex flex-col items-center gap-1.5 p-2 min-w-0 ${
         isDragging ? 'relative' : ''
       }`}
@@ -71,14 +74,14 @@ const CalculatorGridTile = ({
         type="button"
         ref={setActivatorNodeRef}
         className="cursor-grab active:cursor-grabbing touch-none p-0.5 rounded-lg hover:bg-white/10"
-        aria-label={`Drag to reorder ${material?.label ?? materialId}`}
+        aria-label={t('drag.reorder', { label: materialName })}
         {...listeners}
         {...attributes}
       >
         {imageSrc ? (
           <img
             src={imageSrc}
-            alt={material?.label ?? materialId}
+            alt={materialName}
             className="w-10 h-10 object-contain pointer-events-none"
           />
         ) : (
@@ -89,8 +92,8 @@ const CalculatorGridTile = ({
         className="input py-1 px-1 text-xs text-center w-full min-w-0"
         type="number"
         value={price === 0 ? '' : price}
-        placeholder="Price"
-        aria-label={`Price for ${material?.label ?? materialId}`}
+        placeholder={t('common.price')}
+        aria-label={t('calc.priceFor', { name: materialName })}
         onChange={(e) => handleChange(e, 'price')}
         onKeyDown={excludeSpecialCharacters}
       />
@@ -98,8 +101,8 @@ const CalculatorGridTile = ({
         className="input py-1 px-1 text-xs text-center w-full min-w-0"
         type="number"
         value={quantity === 0 ? '' : quantity}
-        placeholder="Qty"
-        aria-label={`Quantity for ${material?.label ?? materialId}`}
+        placeholder={t('common.qty')}
+        aria-label={t('calc.quantityFor', { name: materialName })}
         onChange={(e) => handleChange(e, 'quantity')}
         onKeyDown={excludeSpecialCharacters}
       />

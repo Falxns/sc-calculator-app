@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocale } from '../../context/LocaleContext';
 import type { RowInsertOption } from '../../utils/messageTemplate';
 import { formatRowToken, TOTAL_TOKEN } from '../../utils/messageTemplate';
 
@@ -8,6 +9,7 @@ interface MessageInsertMenuProps {
 }
 
 const MessageInsertMenu = ({ rows, onInsert }: MessageInsertMenuProps) => {
+  const { t } = useLocale();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -42,7 +44,7 @@ const MessageInsertMenu = ({ rows, onInsert }: MessageInsertMenuProps) => {
       <button
         type="button"
         className="btn w-auto p-2 text-xs font-semibold"
-        aria-label="Insert calculator placeholder"
+        aria-label={t('messages.insertPlaceholder')}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         onClick={() => setIsOpen((open) => !open)}
@@ -56,7 +58,7 @@ const MessageInsertMenu = ({ rows, onInsert }: MessageInsertMenuProps) => {
           className="absolute right-0 top-full mt-1 z-20 min-w-[11rem] max-h-52 overflow-y-auto blur-effect py-1 shadow-lg"
         >
           {rows.length === 0 ? (
-            <li className="px-3 py-2 text-xs text-white/50">No calculator rows</li>
+            <li className="px-3 py-2 text-xs text-white/50">{t('messages.noRows')}</li>
           ) : (
             rows.map((row) => (
               <li key={row.rowIndex}>
@@ -79,7 +81,7 @@ const MessageInsertMenu = ({ rows, onInsert }: MessageInsertMenuProps) => {
               className="w-full text-left px-3 py-1.5 text-xs hover:bg-white/10 transition-colors"
               onClick={() => pick(TOTAL_TOKEN)}
             >
-              Total
+              {t('messages.total')}
             </button>
           </li>
         </ul>

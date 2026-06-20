@@ -11,6 +11,7 @@ import {
 } from '@dnd-kit/sortable';
 import { createUniqueMaterialId } from '../../constants/materials';
 import useSortableSensors from '../../hooks/useSortableSensors';
+import { useLocale } from '../../context/LocaleContext';
 import type { Material } from '../../types';
 import { getMaterialImageSrc } from '../../utils/materialImage';
 import { MAX_ICON_BYTES, readFileAsDataUrl } from '../../utils/readFileAsDataUrl';
@@ -30,6 +31,7 @@ const MaterialManager = ({
   setMaterials,
   onMaterialRemoved,
 }: MaterialManagerProps) => {
+  const { t } = useLocale();
   const sensors = useSortableSensors();
 
   const [label, setLabel] = useState('');
@@ -69,7 +71,7 @@ const MaterialManager = ({
     e.target.value = '';
     if (!file) return;
     if (file.size > MAX_ICON_BYTES) {
-      alert('Image is too large. Please use an icon under 200 KB.');
+      alert(t('materials.imageTooLarge'));
       return;
     }
     onLoaded(await readFileAsDataUrl(file));
@@ -179,7 +181,7 @@ const MaterialManager = ({
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <span className="text-white/60">Icon</span>
+                          <span className="text-white/60">{t('materials.icon')}</span>
                         )}
                         <input
                           type="file"
@@ -194,21 +196,21 @@ const MaterialManager = ({
                           className="btn w-auto py-1.5 px-2 text-xs"
                           onClick={() => setEditImage('cleared')}
                         >
-                          Clear icon
+                          {t('materials.clearIcon')}
                         </button>
                       )}
                       <input
                         className="input py-1.5 px-2 text-sm flex-1 min-w-[6rem]"
                         type="text"
                         value={editLabel}
-                        aria-label="Material name"
+                        aria-label={t('materials.materialName')}
                         onChange={(e) => setEditLabel(e.target.value)}
                       />
                       <input
                         className="input py-1.5 px-2 text-sm w-24 text-center"
                         type="number"
                         value={editPrice}
-                        aria-label="Default price"
+                        aria-label={t('materials.defaultPrice')}
                         onChange={(e) => setEditPrice(e.target.value)}
                       />
                     </div>
@@ -218,14 +220,14 @@ const MaterialManager = ({
                         className="btn w-auto py-1.5 px-3 text-sm"
                         onClick={cancelEdit}
                       >
-                        Cancel
+                        {t('common.cancel')}
                       </button>
                       <button
                         type="button"
                         className="btn w-auto py-1.5 px-3 text-sm"
                         onClick={handleSaveEdit}
                       >
-                        Save
+                        {t('common.save')}
                       </button>
                     </div>
                   </div>
@@ -248,12 +250,12 @@ const MaterialManager = ({
       <div className="flex flex-wrap items-end gap-2 pt-1 border-t border-white/10">
         <label
           className="btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center cursor-pointer overflow-hidden text-xs"
-          aria-label="Upload icon"
+          aria-label={t('materials.uploadIcon')}
         >
           {imageData ? (
             <img src={imageData} alt="" className="w-full h-full object-cover" />
           ) : (
-            <span className="text-white/60">Icon</span>
+            <span className="text-white/60">{t('materials.icon')}</span>
           )}
           <input
             type="file"
@@ -265,23 +267,23 @@ const MaterialManager = ({
         <input
           className="input py-1.5 px-2 text-sm flex-1 min-w-[6rem]"
           type="text"
-          placeholder="Name"
+          placeholder={t('common.name')}
           value={label}
-          aria-label="Material name"
+          aria-label={t('materials.materialName')}
           onChange={(e) => setLabel(e.target.value)}
         />
         <input
           className="input py-1.5 px-2 text-sm w-24 text-center"
           type="number"
-          placeholder="Price"
+          placeholder={t('common.price')}
           value={defaultPrice}
-          aria-label="Default price"
+          aria-label={t('materials.defaultPrice')}
           onChange={(e) => setDefaultPrice(e.target.value)}
         />
         <button
           type="button"
           className="btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center"
-          aria-label="Add material"
+          aria-label={t('materials.addMaterial')}
           onClick={handleAddMaterial}
         >
           <PlusIcon className="w-5 h-5" />

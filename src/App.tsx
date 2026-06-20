@@ -31,7 +31,6 @@ const App = () => {
     deleteProfile,
     handleMaterialRemoved,
     handleMaterialsImported,
-    suggestProfileName,
   } = useCalculatorProfiles(materials);
 
   const handleFullBackupImport = (backup: AppBackup) => {
@@ -59,7 +58,6 @@ const App = () => {
             onSwitchProfile={switchProfile}
             onAddProfile={addProfile}
             onDeleteProfile={deleteProfile}
-            suggestProfileName={suggestProfileName}
             onMaterialRemovedRef={onMaterialRemovedRef}
             onMaterialsImportedRef={onMaterialsImportedRef}
             handleMaterialRemoved={handleMaterialRemoved}

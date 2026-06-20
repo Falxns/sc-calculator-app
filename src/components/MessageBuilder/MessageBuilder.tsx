@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useLocale } from '../../context/LocaleContext';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import useToast from '../../hooks/useToast';
 import type { Calculator, Material, MessageBuilderState } from '../../types';
 import { MESSAGES_STORAGE_KEY } from '../../utils/backupIo';
 import { copyToClipboard } from '../../utils/copyToClipboard';
+import { formatTemplateWarning } from '../../utils/formatTemplateWarning';
 import {
   buildRowInsertOptions,
   resolveMessageTemplate,
@@ -33,6 +35,7 @@ const MessageBuilder = ({
   materials,
   calculatorTotal,
 }: MessageBuilderProps) => {
+  const { t } = useLocale();
   const [builderState, setBuilderState] = useLocalStorage<MessageBuilderState>(
     MESSAGES_STORAGE_KEY,
     {
@@ -78,12 +81,12 @@ const MessageBuilder = ({
     try {
       await copyToClipboard(text);
       if (warnings.length) {
-        showToast(warnings[0], 'error');
+        showToast(formatTemplateWarning(warnings[0], t), 'error');
       } else {
-        showToast('Copied!', 'success');
+        showToast(t('toast.copied'), 'success');
       }
     } catch {
-      showToast('Failed to copy!', 'error');
+      showToast(t('toast.copyFailed'), 'error');
     }
   };
 
@@ -100,7 +103,7 @@ const MessageBuilder = ({
         messages: prev.messages.filter((m) => m.id !== pendingDeleteId),
       }));
       setPendingDeleteId(null);
-      showToast('Message deleted!', 'success');
+      showToast(t('toast.messageDeleted'), 'success');
     }
   };
 
@@ -116,10 +119,7 @@ const MessageBuilder = ({
     <div className={sectionWrapperClass}>
       <section className={sectionGlassClass}>
         {builderState.messages.length === 0 ? (
-          <p className="text-sm text-white/60 text-center py-6">
-            No messages yet. Use + to add one. Insert row placeholders with {'{+}'} — copy
-            resolves them to [Material]price for in-game chat.
-          </p>
+          <p className="text-sm text-white/60 text-center py-6">{t('messages.noMessages')}</p>
         ) : (
           <div className="w-full">
             {builderState.messages.map((message) => (
@@ -143,7 +143,7 @@ const MessageBuilder = ({
         <button
           type="button"
           className={sideActionButtonClass}
-          aria-label="Add message"
+          aria-label={t('messages.add')}
           onClick={handleAddMessage}
         >
           <PlusIcon className="w-6 h-6" />
@@ -153,6 +153,7 @@ const MessageBuilder = ({
       {createPortal(
         <ConfirmModal
           isOpen={pendingDeleteId !== null}
+          message={t('messages.deleteConfirm')}
           onConfirm={confirmDeleteMessage}
           onCancel={cancelDeleteMessage}
         />,

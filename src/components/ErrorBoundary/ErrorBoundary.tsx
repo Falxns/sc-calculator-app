@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { useLocale } from '../../context/LocaleContext';
 
 interface Props {
   children: ReactNode;
@@ -8,6 +9,22 @@ interface Props {
 interface State {
   hasError: boolean;
 }
+
+const ErrorFallback = ({ onRetry }: { onRetry: () => void }) => {
+  const { t } = useLocale();
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-900 text-white">
+      <div className="glass-container flex-col gap-4 p-6 max-w-md text-center">
+        <h2 className="text-xl font-bold">{t('error.title')}</h2>
+        <p className="text-sm text-white/80">{t('error.body')}</p>
+        <button type="button" className="btn w-auto" onClick={onRetry}>
+          {t('error.tryAgain')}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
@@ -24,21 +41,7 @@ class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         this.props.fallback ?? (
-          <div className="min-h-screen flex items-center justify-center p-4 bg-gray-900 text-white">
-            <div className="glass-container flex-col gap-4 p-6 max-w-md text-center">
-              <h2 className="text-xl font-bold">Something went wrong</h2>
-              <p className="text-sm text-white/80">
-                The app hit an error. Try refreshing the page.
-              </p>
-              <button
-                type="button"
-                className="btn w-auto"
-                onClick={() => this.setState({ hasError: false })}
-              >
-                Try again
-              </button>
-            </div>
-          </div>
+          <ErrorFallback onRetry={() => this.setState({ hasError: false })} />
         )
       );
     }

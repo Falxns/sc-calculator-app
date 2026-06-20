@@ -1,5 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useLocale } from '../../context/LocaleContext';
 import type { Material } from '../../types';
 import { getMaterialImageSrc } from '../../utils/materialImage';
 import DragHandle from '../DragHandle/DragHandle';
@@ -23,6 +24,7 @@ const MaterialSortableRow = ({
   onEdit,
   onRemove,
 }: MaterialSortableRowProps) => {
+  const { t } = useLocale();
   const {
     attributes,
     listeners,
@@ -66,7 +68,7 @@ const MaterialSortableRow = ({
         <button
           type="button"
           className={squareBtnClass}
-          aria-label={`Edit ${material.label}`}
+          aria-label={t('materials.edit', { name: material.label })}
           onClick={() => onEdit(material)}
         >
           <EditIcon className="w-3.5 h-3.5" />
@@ -74,7 +76,7 @@ const MaterialSortableRow = ({
         <button
           type="button"
           className={`${squareBtnClass} text-base leading-none`}
-          aria-label={`Remove ${material.label}`}
+          aria-label={t('materials.remove', { name: material.label })}
           disabled={!canRemove}
           onClick={() => onRemove(material.id)}
         >

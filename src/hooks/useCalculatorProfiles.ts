@@ -4,7 +4,6 @@ import { createDefaultCalculators, DEFAULT_MATERIALS } from '../constants/materi
 import type { CalculatorProfilesState, CalculatorState, Material } from '../types';
 import {
   createDefaultProfile,
-  createUniqueProfileName,
   loadProfilesStateFromStorage,
   normalizeProfilesState,
   PROFILES_STORAGE_KEY,
@@ -97,12 +96,6 @@ const useCalculatorProfiles = (materials: Material[]) => {
     setProfilesState((prev) => remapProfilesForMaterials(prev, newMaterials));
   };
 
-  const suggestProfileName = () =>
-    createUniqueProfileName(
-      'Profile',
-      profilesState.profiles.map((p) => p.name)
-    );
-
   return {
     calculatorState,
     setCalculatorState,
@@ -114,7 +107,6 @@ const useCalculatorProfiles = (materials: Material[]) => {
     deleteProfile,
     handleMaterialRemoved,
     handleMaterialsImported,
-    suggestProfileName,
   };
 };
 

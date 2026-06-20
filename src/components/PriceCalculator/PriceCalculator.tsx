@@ -13,6 +13,7 @@ import {
 import useToast from '../../hooks/useToast';
 import useSortableSensors from '../../hooks/useSortableSensors';
 import useLocalStorage from '../../hooks/useLocalStorage';
+import { useLocale } from '../../context/LocaleContext';
 import { createCalculator, DEFAULT_MATERIALS } from '../../constants/materials';
 import {
   sectionWrapperClass,
@@ -41,7 +42,6 @@ interface PriceCalculatorProps {
   onSwitchProfile: (profileId: string) => void;
   onAddProfile: (name: string) => void;
   onDeleteProfile: (profileId: string) => void;
-  suggestProfileName: () => string;
   onMaterialRemovedRef: React.MutableRefObject<
     (materialId: string, remainingMaterials: Material[]) => void
   >;
@@ -59,12 +59,12 @@ const PriceCalculator = ({
   onSwitchProfile,
   onAddProfile,
   onDeleteProfile,
-  suggestProfileName,
   onMaterialRemovedRef,
   onMaterialsImportedRef,
   handleMaterialRemoved,
   handleMaterialsImported,
 }: PriceCalculatorProps) => {
+  const { t } = useLocale();
   const resolvedMaterials = materials.length ? materials : DEFAULT_MATERIALS;
   const { toast, showToast } = useToast();
   const sensors = useSortableSensors();
@@ -82,9 +82,9 @@ const PriceCalculator = ({
   const handleCopy = async (value: number) => {
     try {
       await copyToClipboard(String(value));
-      showToast('Copied!', 'success');
+      showToast(t('toast.copied'), 'success');
     } catch {
-      showToast('Failed to copy!', 'error');
+      showToast(t('toast.copyFailed'), 'error');
     }
   };
 
@@ -136,7 +136,6 @@ const PriceCalculator = ({
           onSwitch={onSwitchProfile}
           onAdd={onAddProfile}
           onDelete={onDeleteProfile}
-          suggestProfileName={suggestProfileName}
         />
       </div>
 
@@ -146,9 +145,7 @@ const PriceCalculator = ({
         </div>
 
         {calculatorState.calculators.length === 0 ? (
-          <p className="text-sm text-white/60 text-center py-6">
-            No rows yet. Use + to add a calculator row.
-          </p>
+          <p className="text-sm text-white/60 text-center py-6">{t('calc.noRows')}</p>
         ) : (
           <DndContext
             sensors={sensors}
@@ -190,11 +187,11 @@ const PriceCalculator = ({
 
         <div className="flex items-center justify-center w-full">
           <div className="flex items-center gap-3">
-            <span className="text-base text-white/70">Total:</span>
+            <span className="text-base text-white/70">{t('calc.total')}</span>
             <button
               type="button"
               className="copyable text-2xl font-bold"
-              aria-label={`Copy total ${total}`}
+              aria-label={t('calc.copyTotal', { total })}
               onClick={() => handleCopy(total)}
             >
               {total.toLocaleString()}
@@ -203,7 +200,7 @@ const PriceCalculator = ({
           <button
             type="button"
             className="btn w-auto p-2 ml-8"
-            aria-label="Reset all quantities"
+            aria-label={t('calc.resetAllQty')}
             onClick={resetAllQuantities}
           >
             <ResetIcon className="w-5 h-5" />
@@ -217,7 +214,7 @@ const PriceCalculator = ({
         <button
           type="button"
           className={sideActionButtonClass}
-          aria-label="Add row"
+          aria-label={t('calc.addRow')}
           onClick={addRow}
         >
           <PlusIcon className="w-6 h-6" />

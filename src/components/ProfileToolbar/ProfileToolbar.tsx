@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useLocale } from '../../context/LocaleContext';
 import type { CalculatorProfile } from '../../types';
+import { createUniqueProfileName } from '../../utils/calculatorProfiles';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import Modal from '../Modal/Modal';
 import PlusIcon from '../icons/PlusIcon';
@@ -13,7 +15,6 @@ interface ProfileToolbarProps {
   onSwitch: (profileId: string) => void;
   onAdd: (name: string) => void;
   onDelete: (profileId: string) => void;
-  suggestProfileName: () => string;
 }
 
 const iconButtonClass = `${sideActionButtonClass} self-end`;
@@ -24,8 +25,8 @@ const ProfileToolbar = ({
   onSwitch,
   onAdd,
   onDelete,
-  suggestProfileName,
 }: ProfileToolbarProps) => {
+  const { t } = useLocale();
   const [isAdding, setIsAdding] = useState(false);
   const [newProfileName, setNewProfileName] = useState('');
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -34,7 +35,12 @@ const ProfileToolbar = ({
   const canDelete = profiles.length > 1;
 
   const openAddModal = () => {
-    setNewProfileName(suggestProfileName());
+    setNewProfileName(
+      createUniqueProfileName(
+        t('profile.suggestedName'),
+        profiles.map((p) => p.name)
+      )
+    );
     setIsAdding(true);
   };
 
@@ -60,14 +66,14 @@ const ProfileToolbar = ({
     setPendingDeleteId(null);
   };
 
+  const pendingDeleteName =
+    profiles.find((p) => p.id === pendingDeleteId)?.name ?? '';
+
   return (
     <>
-      <div
-        className="flex flex-col gap-1.5 shrink-0"
-        style={{ width: SECTION_SIDE_WIDTH }}
-      >
+      <div className="flex flex-col gap-1.5 shrink-0" style={{ width: SECTION_SIDE_WIDTH }}>
         <label className="sr-only" htmlFor="calculator-profile">
-          Calculator profile
+          {t('profile.label')}
         </label>
         <select
           id="calculator-profile"
@@ -85,7 +91,7 @@ const ProfileToolbar = ({
         <button
           type="button"
           className={iconButtonClass}
-          aria-label="Add profile"
+          aria-label={t('profile.add')}
           onClick={openAddModal}
         >
           <PlusIcon className="w-6 h-6" />
@@ -93,7 +99,7 @@ const ProfileToolbar = ({
         <button
           type="button"
           className={iconButtonClass}
-          aria-label={`Delete profile ${activeProfile?.name ?? ''}`}
+          aria-label={t('profile.delete', { name: activeProfile?.name ?? '' })}
           disabled={!canDelete}
           onClick={requestDelete}
         >
@@ -101,14 +107,14 @@ const ProfileToolbar = ({
         </button>
       </div>
 
-      <Modal isOpen={isAdding} onClose={closeAddModal} title="New profile">
+      <Modal isOpen={isAdding} onClose={closeAddModal} title={t('profile.new')}>
         <div className="flex flex-col gap-3 w-full">
           <input
             className="input py-2 px-3 text-sm w-full"
             type="text"
             value={newProfileName}
-            placeholder="Profile name"
-            aria-label="New profile name"
+            placeholder={t('profile.namePlaceholder')}
+            aria-label={t('profile.namePlaceholder')}
             autoFocus
             onChange={(e) => setNewProfileName(e.target.value)}
             onKeyDown={(e) => {
@@ -117,10 +123,10 @@ const ProfileToolbar = ({
           />
           <div className="flex gap-2">
             <button type="button" className="btn w-auto flex-1 py-2 text-sm" onClick={closeAddModal}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button type="button" className="btn w-auto flex-1 py-2 text-sm" onClick={confirmAdd}>
-              Save
+              {t('common.save')}
             </button>
           </div>
         </div>
@@ -129,8 +135,8 @@ const ProfileToolbar = ({
       {createPortal(
         <ConfirmModal
           isOpen={pendingDeleteId !== null}
-          message={`Delete profile "${profiles.find((p) => p.id === pendingDeleteId)?.name ?? ''}"?`}
-          confirmLabel="Delete"
+          message={t('profile.deleteConfirm', { name: pendingDeleteName })}
+          confirmLabel={t('common.delete')}
           onConfirm={confirmDelete}
           onCancel={() => setPendingDeleteId(null)}
         />,

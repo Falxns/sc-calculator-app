@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useLocale } from '../../context/LocaleContext';
 import type { Message } from '../../types';
 import type { RowInsertOption } from '../../utils/messageTemplate';
 import CopyIcon from '../icons/CopyIcon';
@@ -24,6 +25,7 @@ const MessageComponent = ({
   handleCopyMessage,
   handleDeleteMessage,
 }: MessageComponentProps) => {
+  const { t } = useLocale();
   const { id, content } = message;
   const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -66,7 +68,7 @@ const MessageComponent = ({
         onChange={(e) => handleChangeMessage(id, e)}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        placeholder="e.g. Buying {1} {2}, total {total}"
+        placeholder={t('messages.placeholder')}
         aria-label={`Message ${id.slice(0, 8)}...`}
       />
       <div className={`flex flex-col gap-1.5 shrink-0 ${isExpanded ? 'pt-1' : ''}`}>
@@ -74,7 +76,7 @@ const MessageComponent = ({
         <button
           type="button"
           className="btn w-auto p-2"
-          aria-label="Copy resolved message"
+          aria-label={t('messages.copyResolved')}
           onClick={() => handleCopyMessage(content)}
         >
           <CopyIcon className="w-4 h-4" />
@@ -82,7 +84,7 @@ const MessageComponent = ({
         <button
           type="button"
           className="btn w-auto p-2"
-          aria-label="Delete"
+          aria-label={t('messages.delete')}
           onClick={() => handleDeleteMessage(id)}
         >
           <TrashIcon className="w-4 h-4" />

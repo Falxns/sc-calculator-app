@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useLocale } from '../../context/LocaleContext';
 import ResetIcon from '../icons/ResetIcon';
 import TrashIcon from '../icons/TrashIcon';
 import DragHandle from '../DragHandle/DragHandle';
@@ -22,8 +23,10 @@ const CalculatorRow = ({
   onRemove,
   onCopy,
 }: CalculatorRowProps) => {
+  const { t } = useLocale();
   const { id, materialId, price, quantity } = calculator;
   const material = findMaterial(materials, materialId);
+  const materialName = material?.label ?? materialId;
   const subtotal = price * quantity;
   const imageSrc = getMaterialImageSrc(material);
 
@@ -98,20 +101,20 @@ const CalculatorRow = ({
       }`}
     >
       <DragHandle
-        label={material?.label ?? `row ${id}`}
+        label={materialName}
         setActivatorNodeRef={setActivatorNodeRef}
         listeners={listeners}
         attributes={attributes}
       />
       {imageSrc ? (
-        <img src={imageSrc} alt={material?.label ?? materialId} className="w-9 h-9 shrink-0" />
+        <img src={imageSrc} alt={materialName} className="w-9 h-9 shrink-0" />
       ) : (
         <span className="w-9 h-9 shrink-0 rounded-lg bg-white/10" aria-hidden />
       )}
       <select
         className="input py-2 px-2 text-sm w-full min-w-[7rem] flex-1 sm:flex-none sm:min-w-0"
         value={materialId}
-        aria-label={`Material for ${material?.label ?? materialId}`}
+        aria-label={t('calc.materialFor', { name: materialName })}
         onChange={handleMaterialChange}
       >
         {materials.map((m) => (
@@ -124,8 +127,8 @@ const CalculatorRow = ({
         className="input py-2 text-base text-center w-full min-w-[5rem] flex-1 sm:flex-none sm:min-w-0"
         type="number"
         value={price === 0 ? '' : price}
-        placeholder="Price"
-        aria-label={`Price for ${material?.label ?? materialId}`}
+        placeholder={t('common.price')}
+        aria-label={t('calc.priceFor', { name: materialName })}
         onChange={(e) => handleChange(e, 'price')}
         onKeyDown={excludeSpecialCharacters}
       />
@@ -133,15 +136,15 @@ const CalculatorRow = ({
         className="input py-2 text-base text-center w-full min-w-[4rem] flex-1 sm:flex-none sm:min-w-0"
         type="number"
         value={quantity === 0 ? '' : quantity}
-        placeholder="Qty"
-        aria-label={`Quantity for ${material?.label ?? materialId}`}
+        placeholder={t('common.qty')}
+        aria-label={t('calc.quantityFor', { name: materialName })}
         onChange={(e) => handleChange(e, 'quantity')}
         onKeyDown={excludeSpecialCharacters}
       />
       <button
         type="button"
         className="copyable text-base font-semibold text-center w-full min-w-[5rem] flex-1 sm:flex-none sm:min-w-0 py-2"
-        aria-label={`Copy subtotal ${subtotal}`}
+        aria-label={t('calc.copySubtotal', { subtotal })}
         onClick={() => onCopy(subtotal)}
       >
         {subtotal.toLocaleString()}
@@ -150,7 +153,7 @@ const CalculatorRow = ({
         <button
           type="button"
           className="btn w-auto p-1.5"
-          aria-label="Reset quantity"
+          aria-label={t('calc.resetQuantity')}
           onClick={resetQuantity}
         >
           <ResetIcon className="w-4 h-4" />
@@ -158,7 +161,7 @@ const CalculatorRow = ({
         <button
           type="button"
           className="btn w-auto p-1.5"
-          aria-label="Remove row"
+          aria-label={t('calc.removeRow')}
           onClick={() => onRemove(id)}
         >
           <TrashIcon className="w-4 h-4" />
