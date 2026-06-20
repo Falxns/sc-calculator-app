@@ -1,3 +1,4 @@
+import { normalizeMaterials } from './materialsNormalize';
 import type { Material } from '../types';
 
 export const EXPORT_VERSION = 1;
@@ -55,13 +56,15 @@ export const parseMaterialsImport = (raw: unknown): Material[] => {
     ids.add(material.id);
   }
 
-  return list.map((m) => ({
-    id: m.id,
-    label: m.label.trim(),
-    defaultPrice: m.defaultPrice,
-    ...(m.imgSrc ? { imgSrc: m.imgSrc } : {}),
-    ...(m.imageData ? { imageData: m.imageData } : {}),
-  }));
+  return normalizeMaterials(
+    list.map((m) => ({
+      id: m.id,
+      label: m.label.trim(),
+      defaultPrice: m.defaultPrice,
+      ...(m.imgSrc ? { imgSrc: m.imgSrc } : {}),
+      ...(m.imageData ? { imageData: m.imageData } : {}),
+    }))
+  ).materials;
 };
 
 export const downloadMaterialsJson = (materials: Material[]) => {

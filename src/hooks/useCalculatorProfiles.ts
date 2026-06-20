@@ -8,7 +8,9 @@ import {
   loadProfilesStateFromStorage,
   normalizeProfilesState,
   PROFILES_STORAGE_KEY,
+  readMaterialIdRemap,
   remapProfilesForMaterials,
+  remapProfilesMaterialIds,
 } from '../utils/calculatorProfiles';
 
 const useCalculatorProfiles = (materials: Material[]) => {
@@ -17,7 +19,11 @@ const useCalculatorProfiles = (materials: Material[]) => {
   const [profilesState, setProfilesState] = useLocalStorage<CalculatorProfilesState>(
     PROFILES_STORAGE_KEY,
     loadProfilesStateFromStorage(resolvedMaterials),
-    (parsed) => normalizeProfilesState(parsed, resolvedMaterials)
+    (parsed) => {
+      const idMap = readMaterialIdRemap();
+      const normalized = normalizeProfilesState(parsed, resolvedMaterials);
+      return remapProfilesMaterialIds(normalized, idMap, resolvedMaterials);
+    }
   );
 
   const activeProfile =

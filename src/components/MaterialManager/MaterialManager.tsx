@@ -9,7 +9,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { createUniqueMaterialId } from '../../constants/materials';
+import { createUniqueMaterialId } from '../../utils/slugify';
 import useSortableSensors from '../../hooks/useSortableSensors';
 import { useLocale } from '../../context/LocaleContext';
 import type { Material } from '../../types';

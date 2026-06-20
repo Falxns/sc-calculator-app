@@ -1,5 +1,7 @@
 import type { Material } from '../types';
 
+export { createUniqueMaterialId, slugify } from '../utils/slugify';
+
 export const DEFAULT_MATERIALS: Material[] = [
   { id: 'slastena', label: 'Мякоть сластены', defaultPrice: 8000, imgSrc: 'slastena' },
   { id: 'solevik', label: 'Мякоть солевика', defaultPrice: 1500, imgSrc: 'solevik' },
@@ -24,18 +26,3 @@ export const createCalculator = (materials: Material[], materialId?: string) => 
 
 export const createDefaultCalculators = (materials: Material[]) =>
   materials.map((material) => createCalculator(materials, material.id));
-
-export const slugify = (label: string) =>
-  label
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '') || 'material';
-
-export const createUniqueMaterialId = (label: string, existingIds: string[]) => {
-  const base = slugify(label);
-  if (!existingIds.includes(base)) return base;
-  let i = 2;
-  while (existingIds.includes(`${base}-${i}`)) i++;
-  return `${base}-${i}`;
-};
