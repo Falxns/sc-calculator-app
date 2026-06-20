@@ -128,6 +128,7 @@ const SideToolbar = ({
           materials={materials}
           setMaterials={setMaterials}
           onMaterialRemoved={onMaterialRemoved}
+          onNotify={showToast}
         />
       </Modal>
 

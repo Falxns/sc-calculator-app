@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import useLocalStorage from '../hooks/useLocalStorage';
-import { isLocale, translate, type Locale, type TranslationKey } from '../i18n';
+import { detectBrowserLocale, isLocale, translate, type Locale, type TranslationKey } from '../i18n';
 
 interface LocaleContextValue {
   locale: Locale;
@@ -11,8 +11,8 @@ interface LocaleContextValue {
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 export const LocaleProvider = ({ children }: { children: ReactNode }) => {
-  const [locale, setLocale] = useLocalStorage<Locale>('appLocale', 'en', (parsed) =>
-    isLocale(parsed) ? parsed : 'en'
+  const [locale, setLocale] = useLocalStorage<Locale>('appLocale', detectBrowserLocale(), (parsed) =>
+    isLocale(parsed) ? parsed : detectBrowserLocale()
   );
 
   const t = (key: TranslationKey, vars?: Record<string, string | number>) =>

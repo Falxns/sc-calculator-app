@@ -6,6 +6,7 @@ import GripIcon from '../icons/GripIcon';
 interface DragHandleProps {
   label: string;
   disabled?: boolean;
+  className?: string;
   setActivatorNodeRef: (element: HTMLElement | null) => void;
   listeners: SyntheticListenerMap | undefined;
   attributes: DraggableAttributes;
@@ -14,6 +15,7 @@ interface DragHandleProps {
 const DragHandle = ({
   label,
   disabled,
+  className = '',
   setActivatorNodeRef,
   listeners,
   attributes,
@@ -24,7 +26,7 @@ const DragHandle = ({
     <button
       type="button"
       ref={setActivatorNodeRef}
-      className="btn w-7 h-7 min-w-7 p-0 shrink-0 flex items-center justify-center cursor-grab active:cursor-grabbing disabled:opacity-30 disabled:cursor-not-allowed touch-none"
+      className={`btn w-7 h-7 min-w-7 p-0 shrink-0 flex items-center justify-center cursor-grab active:cursor-grabbing disabled:opacity-30 disabled:cursor-not-allowed touch-none ${className}`}
       aria-label={t('drag.reorder', { label })}
       disabled={disabled}
       {...listeners}

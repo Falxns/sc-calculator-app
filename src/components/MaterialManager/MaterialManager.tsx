@@ -23,6 +23,7 @@ interface MaterialManagerProps {
   materials: Material[];
   setMaterials: React.Dispatch<React.SetStateAction<{ materials: Material[] }>>;
   onMaterialRemoved: (materialId: string, remainingMaterials: Material[]) => void;
+  onNotify: (message: string, type: 'success' | 'error') => void;
 }
 
 type EditImageState = 'unchanged' | 'cleared' | string;
@@ -31,6 +32,7 @@ const MaterialManager = ({
   materials,
   setMaterials,
   onMaterialRemoved,
+  onNotify,
 }: MaterialManagerProps) => {
   const { t } = useLocale();
   const sensors = useSortableSensors();
@@ -72,7 +74,7 @@ const MaterialManager = ({
     e.target.value = '';
     if (!file) return;
     if (file.size > MAX_ICON_BYTES) {
-      alert(t('materials.imageTooLarge'));
+      onNotify(t('materials.imageTooLarge'), 'error');
       return;
     }
     onLoaded(await readFileAsDataUrl(file));

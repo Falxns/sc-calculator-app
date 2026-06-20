@@ -22,3 +22,17 @@ export const translate = (
 };
 
 export const isLocale = (value: unknown): value is Locale => value === 'en' || value === 'ru';
+
+export const detectBrowserLocale = (): Locale => {
+  const languages = navigator.languages?.length
+    ? [...navigator.languages]
+    : [navigator.language];
+
+  for (const lang of languages) {
+    if (typeof lang === 'string' && lang.toLowerCase().startsWith('ru')) {
+      return 'ru';
+    }
+  }
+
+  return 'en';
+};

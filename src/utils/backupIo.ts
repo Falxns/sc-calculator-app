@@ -2,10 +2,10 @@ import { DEFAULT_MATERIALS } from '../constants/materials';
 import type {
   CalculatorProfilesState,
   Material,
-  Message,
   MessageBuilderState,
 } from '../types';
 import { normalizeProfilesState, PROFILES_STORAGE_KEY } from './calculatorProfiles';
+import { normalizeMessagesState } from './messageBuilder';
 import { parseMaterialsImport } from './materialsIo';
 
 export const BACKUP_VERSION = 1;
@@ -20,17 +20,7 @@ export interface AppBackup {
   messages: MessageBuilderState;
 }
 
-const isMessage = (value: unknown): value is Message => {
-  if (!value || typeof value !== 'object') return false;
-  const m = value as Record<string, unknown>;
-  return typeof m.id === 'string' && typeof m.content === 'string';
-};
-
-const parseMessages = (raw: unknown): MessageBuilderState => {
-  const data = raw as Partial<MessageBuilderState> | null;
-  if (!Array.isArray(data?.messages)) return { messages: [] };
-  return { messages: data.messages.filter(isMessage) };
-};
+const parseMessages = (raw: unknown): MessageBuilderState => normalizeMessagesState(raw);
 
 const readJson = (key: string): unknown => {
   try {
