@@ -17,6 +17,7 @@ import { getMaterialImageSrc } from '../../utils/materialImage';
 import { MAX_ICON_BYTES, readFileAsDataUrl } from '../../utils/readFileAsDataUrl';
 import MaterialSortableRow from './MaterialSortableRow';
 import PlusIcon from '../icons/PlusIcon';
+import UploadIcon from '../icons/UploadIcon';
 
 interface MaterialManagerProps {
   materials: Material[];
@@ -173,7 +174,10 @@ const MaterialManager = ({
                 <li key={material.id} className="py-2 first:pt-0 last:pb-0">
                   <div className="flex flex-col gap-2">
                     <div className="flex flex-wrap items-end gap-2">
-                      <label className="btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center cursor-pointer overflow-hidden text-xs">
+                      <label
+                        className="btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center cursor-pointer overflow-hidden"
+                        aria-label={t('materials.uploadIcon')}
+                      >
                         {editPreviewSrc ? (
                           <img
                             src={editPreviewSrc}
@@ -181,7 +185,7 @@ const MaterialManager = ({
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <span className="text-white/60">{t('materials.icon')}</span>
+                          <UploadIcon className="w-4 h-4 text-white/60" />
                         )}
                         <input
                           type="file"
@@ -243,52 +247,53 @@ const MaterialManager = ({
                 />
               )
             )}
+            <li className="pt-2">
+              <div className="flex flex-wrap items-end gap-2">
+                <label
+                  className="btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center cursor-pointer overflow-hidden"
+                  aria-label={t('materials.uploadIcon')}
+                >
+                  {imageData ? (
+                    <img src={imageData} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <UploadIcon className="w-4 h-4 text-white/60" />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleImageUpload(e, setImageData)}
+                  />
+                </label>
+                <input
+                  className="input py-1.5 px-2 text-sm flex-1 min-w-[6rem]"
+                  type="text"
+                  placeholder={t('common.name')}
+                  value={label}
+                  aria-label={t('materials.materialName')}
+                  onChange={(e) => setLabel(e.target.value)}
+                />
+                <input
+                  className="input py-1.5 px-2 text-sm w-24 text-center"
+                  type="number"
+                  placeholder={t('common.price')}
+                  value={defaultPrice}
+                  aria-label={t('materials.defaultPrice')}
+                  onChange={(e) => setDefaultPrice(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center"
+                  aria-label={t('materials.addMaterial')}
+                  onClick={handleAddMaterial}
+                >
+                  <PlusIcon className="w-5 h-5" />
+                </button>
+              </div>
+            </li>
           </ul>
         </SortableContext>
       </DndContext>
-
-      <div className="flex flex-wrap items-end gap-2 pt-1 border-t border-white/10">
-        <label
-          className="btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center cursor-pointer overflow-hidden text-xs"
-          aria-label={t('materials.uploadIcon')}
-        >
-          {imageData ? (
-            <img src={imageData} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-white/60">{t('materials.icon')}</span>
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => handleImageUpload(e, setImageData)}
-          />
-        </label>
-        <input
-          className="input py-1.5 px-2 text-sm flex-1 min-w-[6rem]"
-          type="text"
-          placeholder={t('common.name')}
-          value={label}
-          aria-label={t('materials.materialName')}
-          onChange={(e) => setLabel(e.target.value)}
-        />
-        <input
-          className="input py-1.5 px-2 text-sm w-24 text-center"
-          type="number"
-          placeholder={t('common.price')}
-          value={defaultPrice}
-          aria-label={t('materials.defaultPrice')}
-          onChange={(e) => setDefaultPrice(e.target.value)}
-        />
-        <button
-          type="button"
-          className="btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center"
-          aria-label={t('materials.addMaterial')}
-          onClick={handleAddMaterial}
-        >
-          <PlusIcon className="w-5 h-5" />
-        </button>
-      </div>
     </div>
   );
 };

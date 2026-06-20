@@ -151,31 +151,32 @@ const ProfileManager = ({
                 />
               )
             )}
+            <li className="pt-2">
+              <div className="flex items-end gap-2">
+                <input
+                  className="input py-1.5 px-2 text-sm flex-1 min-w-0"
+                  type="text"
+                  placeholder={t('profile.namePlaceholder')}
+                  value={label}
+                  aria-label={t('profile.namePlaceholder')}
+                  onChange={(e) => setLabel(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddProfile();
+                  }}
+                />
+                <button
+                  type="button"
+                  className="btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center"
+                  aria-label={t('profile.add')}
+                  onClick={handleAddProfile}
+                >
+                  <PlusIcon className="w-5 h-5" />
+                </button>
+              </div>
+            </li>
           </ul>
         </SortableContext>
       </DndContext>
-
-      <div className="flex items-end gap-2 pt-1 border-t border-white/10">
-        <input
-          className="input py-1.5 px-2 text-sm flex-1 min-w-0"
-          type="text"
-          placeholder={t('profile.namePlaceholder')}
-          value={label}
-          aria-label={t('profile.namePlaceholder')}
-          onChange={(e) => setLabel(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleAddProfile();
-          }}
-        />
-        <button
-          type="button"
-          className="btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center"
-          aria-label={t('profile.add')}
-          onClick={handleAddProfile}
-        >
-          <PlusIcon className="w-5 h-5" />
-        </button>
-      </div>
 
       {createPortal(
         <ConfirmModal

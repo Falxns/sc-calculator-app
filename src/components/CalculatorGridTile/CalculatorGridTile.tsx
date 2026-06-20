@@ -1,9 +1,10 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useLocale } from '../../context/LocaleContext';
 import EditIcon from '../icons/EditIcon';
 import TrashIcon from '../icons/TrashIcon';
+import MaterialSelect from '../MaterialSelect/MaterialSelect';
 import type { Calculator, CalculatorState, Material } from '../../types';
 import { findMaterial, getMaterialImageSrc } from '../../utils/materialImage';
 
@@ -24,7 +25,6 @@ const CalculatorGridTile = ({
   onRemove,
 }: CalculatorGridTileProps) => {
   const { t } = useLocale();
-  const materialSelectRef = useRef<HTMLSelectElement>(null);
   const { id, materialId, price, quantity } = calculator;
   const material = findMaterial(materials, materialId);
   const materialName = material?.label ?? materialId;
@@ -70,8 +70,8 @@ const CalculatorGridTile = ({
     }));
   };
 
-  const handleMaterialChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const nextMaterial = findMaterial(materials, e.target.value);
+  const handleMaterialChange = (nextMaterialId: string) => {
+    const nextMaterial = findMaterial(materials, nextMaterialId);
     if (!nextMaterial) return;
 
     setCalculatorState((prev) => ({
@@ -84,16 +84,6 @@ const CalculatorGridTile = ({
     }));
   };
 
-  const openMaterialPicker = () => {
-    const el = materialSelectRef.current;
-    if (!el) return;
-    if ('showPicker' in el && typeof el.showPicker === 'function') {
-      el.showPicker();
-    } else {
-      el.click();
-    }
-  };
-
   return (
     <div
       ref={setNodeRef}
@@ -104,14 +94,25 @@ const CalculatorGridTile = ({
       } ${hasQuantity ? 'ring-1 ring-white/25' : ''}`}
     >
       <div className="absolute top-1 inset-x-1 z-10 flex justify-between pointer-events-none">
-        <button
-          type="button"
-          className={`${tileActionClass} pointer-events-auto`}
-          aria-label={t('calc.changeMaterial')}
-          onClick={openMaterialPicker}
-        >
-          <EditIcon className="w-3 h-3" />
-        </button>
+        <MaterialSelect
+          materials={materials}
+          value={materialId}
+          ariaLabel={t('calc.materialFor', { name: materialName })}
+          className="pointer-events-auto"
+          onChange={handleMaterialChange}
+          renderTrigger={({ isOpen, toggle }) => (
+            <button
+              type="button"
+              className={tileActionClass}
+              aria-label={t('calc.changeMaterial')}
+              aria-haspopup="listbox"
+              aria-expanded={isOpen}
+              onClick={toggle}
+            >
+              <EditIcon className="w-3 h-3" />
+            </button>
+          )}
+        />
         <button
           type="button"
           className={`${tileActionClass} pointer-events-auto`}
@@ -121,21 +122,6 @@ const CalculatorGridTile = ({
           <TrashIcon className="w-3 h-3" />
         </button>
       </div>
-
-      <select
-        ref={materialSelectRef}
-        className="sr-only"
-        value={materialId}
-        tabIndex={-1}
-        aria-label={t('calc.materialFor', { name: materialName })}
-        onChange={handleMaterialChange}
-      >
-        {materials.map((m) => (
-          <option key={m.id} value={m.id}>
-            {m.label}
-          </option>
-        ))}
-      </select>
 
       <button
         type="button"

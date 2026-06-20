@@ -5,6 +5,7 @@ import type { Material } from '../../types';
 import { getMaterialImageSrc } from '../../utils/materialImage';
 import DragHandle from '../DragHandle/DragHandle';
 import EditIcon from '../icons/EditIcon';
+import TrashIcon from '../icons/TrashIcon';
 
 const squareBtnClass =
   'btn w-7 h-7 min-w-7 p-0 shrink-0 flex items-center justify-center';
@@ -75,12 +76,12 @@ const MaterialSortableRow = ({
         </button>
         <button
           type="button"
-          className={`${squareBtnClass} text-base leading-none`}
+          className={squareBtnClass}
           aria-label={t('materials.remove', { name: material.label })}
           disabled={!canRemove}
           onClick={() => onRemove(material.id)}
         >
-          ×
+          <TrashIcon className="w-3.5 h-3.5" />
         </button>
       </div>
     </li>

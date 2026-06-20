@@ -5,6 +5,7 @@ import type { CalculatorProfile } from '../../types';
 import DragHandle from '../DragHandle/DragHandle';
 import CopyIcon from '../icons/CopyIcon';
 import EditIcon from '../icons/EditIcon';
+import TrashIcon from '../icons/TrashIcon';
 
 const squareBtnClass =
   'btn w-7 h-7 min-w-7 p-0 shrink-0 flex items-center justify-center';
@@ -85,12 +86,12 @@ const ProfileSortableRow = ({
         </button>
         <button
           type="button"
-          className={`${squareBtnClass} text-base leading-none`}
+          className={squareBtnClass}
           aria-label={t('profile.delete', { name: profile.name })}
           disabled={!canRemove}
           onClick={() => onRemove(profile.id)}
         >
-          ×
+          <TrashIcon className="w-3.5 h-3.5" />
         </button>
       </div>
     </li>

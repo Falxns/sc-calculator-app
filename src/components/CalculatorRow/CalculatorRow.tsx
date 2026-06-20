@@ -5,6 +5,7 @@ import { useLocale } from '../../context/LocaleContext';
 import ResetIcon from '../icons/ResetIcon';
 import TrashIcon from '../icons/TrashIcon';
 import DragHandle from '../DragHandle/DragHandle';
+import MaterialSelect from '../MaterialSelect/MaterialSelect';
 import type { Calculator, CalculatorState, Material } from '../../types';
 import { findMaterial, getMaterialImageSrc } from '../../utils/materialImage';
 
@@ -69,8 +70,8 @@ const CalculatorRow = ({
     }));
   };
 
-  const handleMaterialChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const nextMaterial = findMaterial(materials, e.target.value);
+  const handleMaterialChange = (nextMaterialId: string) => {
+    const nextMaterial = findMaterial(materials, nextMaterialId);
     if (!nextMaterial) return;
 
     setCalculatorState((prev) => ({
@@ -111,18 +112,13 @@ const CalculatorRow = ({
       ) : (
         <span className="w-9 h-9 shrink-0 rounded-lg bg-white/10" aria-hidden />
       )}
-      <select
-        className="input py-2 px-2 text-sm w-full min-w-[7rem] flex-1 sm:flex-none sm:min-w-0"
+      <MaterialSelect
+        materials={materials}
         value={materialId}
-        aria-label={t('calc.materialFor', { name: materialName })}
+        ariaLabel={t('calc.materialFor', { name: materialName })}
+        className="w-full min-w-[7rem] flex-1 sm:flex-none sm:min-w-0"
         onChange={handleMaterialChange}
-      >
-        {materials.map((m) => (
-          <option key={m.id} value={m.id}>
-            {m.label}
-          </option>
-        ))}
-      </select>
+      />
       <input
         className="input py-2 text-base text-center w-full min-w-[5rem] flex-1 sm:flex-none sm:min-w-0"
         type="number"
