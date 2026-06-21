@@ -6,6 +6,7 @@ import type { Material } from '../../types';
 import type { AppBackup } from '../../utils/backupIo';
 import type { BackupImportMode } from '../../utils/backupMerge';
 import { downloadFullBackupJson, readBackupFromFile } from '../../utils/backupIo';
+import { applyImportedMaterialsIcons } from '../../utils/iconStore';
 import Modal from '../Modal/Modal';
 import BackupImportModal from '../BackupImportModal/BackupImportModal';
 import LanguageToggle from '../LanguageToggle/LanguageToggle';
@@ -19,7 +20,7 @@ interface SideToolbarProps {
   setMaterials: React.Dispatch<React.SetStateAction<{ materials: Material[] }>>;
   onMaterialRemoved: (materialId: string, remainingMaterials: Material[]) => void;
   onMaterialsImported: (materials: Material[]) => void;
-  onFullBackupImport: (backup: AppBackup, mode: BackupImportMode) => void;
+  onFullBackupImport: (backup: AppBackup, mode: BackupImportMode) => void | Promise<void>;
 }
 
 const toolbarButtonClass = 'btn w-11 h-11 min-w-11 p-0 flex items-center justify-center';
@@ -37,9 +38,9 @@ const SideToolbar = ({
   const [pendingBackup, setPendingBackup] = useState<AppBackup | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     try {
-      downloadFullBackupJson();
+      await downloadFullBackupJson();
       showToast(t('toast.backupExported'), 'success');
     } catch {
       showToast(t('toast.exportFailed'), 'error');
@@ -59,8 +60,9 @@ const SideToolbar = ({
       const result = await readBackupFromFile(file);
 
       if (result.type === 'materials') {
-        setMaterials({ materials: result.materials });
-        onMaterialsImported(result.materials);
+        const imported = await applyImportedMaterialsIcons(result.materials, result.icons);
+        setMaterials({ materials: imported });
+        onMaterialsImported(imported);
         showToast(t('toast.materialsImported'), 'success');
         return;
       }
@@ -72,9 +74,9 @@ const SideToolbar = ({
     }
   };
 
-  const confirmFullImport = (mode: BackupImportMode) => {
+  const confirmFullImport = async (mode: BackupImportMode) => {
     if (pendingBackup) {
-      onFullBackupImport(pendingBackup, mode);
+      await onFullBackupImport(pendingBackup, mode);
       showToast(
         mode === 'merge' ? t('toast.backupMerged') : t('toast.backupImported'),
         'success'
@@ -100,7 +102,7 @@ const SideToolbar = ({
           type="button"
           className={toolbarButtonClass}
           aria-label={t('side.exportBackup')}
-          onClick={handleExport}
+          onClick={() => void handleExport()}
         >
           <DownloadIcon className="w-6 h-6" />
         </button>
@@ -118,7 +120,7 @@ const SideToolbar = ({
           type="file"
           accept=".json,application/json"
           className="hidden"
-          onChange={handleImportFile}
+          onChange={(e) => void handleImportFile(e)}
         />
       </div>
 
@@ -138,7 +140,7 @@ const SideToolbar = ({
         <BackupImportModal
           isOpen={pendingBackup !== null}
           backup={pendingBackup}
-          onConfirm={confirmFullImport}
+          onConfirm={(mode) => void confirmFullImport(mode)}
           onCancel={() => setPendingBackup(null)}
         />,
         document.body

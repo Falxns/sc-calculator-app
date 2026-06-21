@@ -4,8 +4,8 @@ export interface Material {
   defaultPrice: number;
   /** Built-in asset filename without extension, e.g. "slastena" */
   imgSrc?: string;
-  /** Base64 data URL for custom uploaded icons */
-  imageData?: string;
+  /** Custom icon stored in IndexedDB (keyed by material id) */
+  customIcon?: boolean;
 }
 
 export interface MaterialsState {

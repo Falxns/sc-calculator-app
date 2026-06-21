@@ -1,18 +1,25 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocale } from '../../context/LocaleContext';
 import { useToast } from '../../context/ToastContext';
 import type { Material } from '../../types';
-import { getMaterialImageSrc } from '../../utils/materialImage';
-import { MAX_ICON_BYTES, readFileAsDataUrl } from '../../utils/readFileAsDataUrl';
+import { getIconUrl } from '../../utils/iconStore';
+import { getBuiltinImageSrc, materialUsesCustomIcon } from '../../utils/materialImage';
+import { MAX_ICON_BYTES } from '../../utils/readFileAsDataUrl';
 import UploadIcon from '../icons/UploadIcon';
 
-type EditImageState = 'unchanged' | 'cleared' | string;
+type EditImageState = 'unchanged' | 'cleared' | 'pending';
 
 interface MaterialEditRowProps {
   material: Material;
   onSave: (
     id: string,
-    updates: { label: string; defaultPrice: number; imageData?: string; clearImage?: boolean }
+    updates: {
+      label: string;
+      defaultPrice: number;
+      customIcon?: boolean;
+      iconFile?: File;
+      clearIcon?: boolean;
+    }
   ) => void;
   onCancel: () => void;
 }
@@ -23,17 +30,31 @@ const MaterialEditRow = ({ material, onSave, onCancel }: MaterialEditRowProps) =
   const [editLabel, setEditLabel] = useState(material.label);
   const [editPrice, setEditPrice] = useState(String(material.defaultPrice));
   const [editImage, setEditImage] = useState<EditImageState>('unchanged');
+  const [iconFile, setIconFile] = useState<File | undefined>();
+  const [previewUrl, setPreviewUrl] = useState<string | undefined>();
+  const [existingCustomUrl, setExistingCustomUrl] = useState('');
 
-  const editPreviewSrc =
-    editImage === 'unchanged'
-      ? getMaterialImageSrc(material)
+  const builtinSrc = getBuiltinImageSrc(material);
+
+  useEffect(() => {
+    if (!materialUsesCustomIcon(material)) return;
+    let cancelled = false;
+    getIconUrl(material.id).then((url) => {
+      if (!cancelled && url) setExistingCustomUrl(url);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [material.id, material.customIcon]);
+
+  const displayPreviewSrc =
+    editImage === 'pending' && previewUrl
+      ? previewUrl
       : editImage === 'cleared'
-        ? material.imgSrc
-          ? getMaterialImageSrc({ ...material, imageData: undefined })
-          : ''
-        : editImage;
+        ? builtinSrc
+        : existingCustomUrl || builtinSrc;
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
@@ -41,7 +62,17 @@ const MaterialEditRow = ({ material, onSave, onCancel }: MaterialEditRowProps) =
       showToast(t('materials.imageTooLarge'), 'error');
       return;
     }
-    setEditImage(await readFileAsDataUrl(file));
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setIconFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    setEditImage('pending');
+  };
+
+  const handleClearIcon = () => {
+    setEditImage('cleared');
+    setIconFile(undefined);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(undefined);
   };
 
   const handleSave = () => {
@@ -53,12 +84,17 @@ const MaterialEditRow = ({ material, onSave, onCancel }: MaterialEditRowProps) =
       label: trimmedLabel,
       defaultPrice: price,
       ...(editImage === 'cleared'
-        ? { clearImage: true }
-        : editImage !== 'unchanged'
-          ? { imageData: editImage }
-          : {}),
+        ? { clearIcon: true, customIcon: false }
+        : editImage === 'pending' && iconFile
+          ? { iconFile, customIcon: true }
+          : material.customIcon
+            ? { customIcon: true }
+            : {}),
     });
   };
+
+  const showClearIcon =
+    materialUsesCustomIcon(material) && editImage !== 'cleared' && editImage !== 'pending';
 
   return (
     <li className="py-2 first:pt-0 last:pb-0">
@@ -68,18 +104,18 @@ const MaterialEditRow = ({ material, onSave, onCancel }: MaterialEditRowProps) =
             className="calc-btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center cursor-pointer overflow-hidden"
             aria-label={t('materials.uploadIcon')}
           >
-            {editPreviewSrc ? (
-              <img src={editPreviewSrc} alt="" className="w-full h-full object-cover" />
+            {displayPreviewSrc ? (
+              <img src={displayPreviewSrc} alt="" className="w-full h-full object-cover" />
             ) : (
               <UploadIcon className="w-4 h-4 text-white/60" />
             )}
             <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
           </label>
-          {material.imageData && editImage !== 'cleared' && (
+          {showClearIcon && (
             <button
               type="button"
               className="calc-btn w-auto py-1.5 px-2 text-xs"
-              onClick={() => setEditImage('cleared')}
+              onClick={handleClearIcon}
             >
               {t('materials.clearIcon')}
             </button>

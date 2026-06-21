@@ -5,8 +5,9 @@ import { useLocale } from '../../context/LocaleContext';
 import EditIcon from '../icons/EditIcon';
 import TrashIcon from '../icons/TrashIcon';
 import MaterialSelect from '../MaterialSelect/MaterialSelect';
+import MaterialIcon from '../MaterialIcon/MaterialIcon';
 import type { Calculator, Material } from '../../types';
-import { findMaterial, getMaterialImageSrc } from '../../utils/materialImage';
+import { findMaterial } from '../../utils/materialImage';
 
 interface CalculatorGridTileProps {
   materials: Material[];
@@ -30,7 +31,6 @@ const CalculatorGridTile = ({
   const { id, materialId, price, quantity } = calculator;
   const material = findMaterial(materials, materialId);
   const materialName = material?.label ?? materialId;
-  const imageSrc = getMaterialImageSrc(material);
   const hasQuantity = quantity > 0;
 
   const {
@@ -112,15 +112,11 @@ const CalculatorGridTile = ({
         {...listeners}
         {...attributes}
       >
-        {imageSrc ? (
-          <img
-            src={imageSrc}
-            alt=""
-            className="w-10 h-10 object-contain pointer-events-none"
-          />
-        ) : (
-          <span className="w-10 h-10 rounded-lg bg-white/10 block" aria-hidden />
-        )}
+        <MaterialIcon
+          material={material}
+          className="w-10 h-10 object-contain pointer-events-none"
+          placeholderClassName="w-10 h-10 rounded-lg bg-white/10 block pointer-events-none"
+        />
       </button>
 
       <input

@@ -2,24 +2,23 @@ import { useState } from 'react';
 import { useLocale } from '../../context/LocaleContext';
 import { useToast } from '../../context/ToastContext';
 import type { Material } from '../../types';
-import { createUniqueMaterialId } from '../../utils/slugify';
-import { MAX_ICON_BYTES, readFileAsDataUrl } from '../../utils/readFileAsDataUrl';
+import { MAX_ICON_BYTES } from '../../utils/readFileAsDataUrl';
 import PlusIcon from '../icons/PlusIcon';
 import UploadIcon from '../icons/UploadIcon';
 
 interface MaterialAddRowProps {
-  existingIds: string[];
-  onAdd: (material: Material) => void;
+  onAdd: (draft: Pick<Material, 'label' | 'defaultPrice'> & { customIcon?: boolean }, iconFile?: File) => void;
 }
 
-const MaterialAddRow = ({ existingIds, onAdd }: MaterialAddRowProps) => {
+const MaterialAddRow = ({ onAdd }: MaterialAddRowProps) => {
   const { t } = useLocale();
   const { showToast } = useToast();
   const [label, setLabel] = useState('');
   const [defaultPrice, setDefaultPrice] = useState('');
-  const [imageData, setImageData] = useState<string | undefined>();
+  const [iconFile, setIconFile] = useState<File | undefined>();
+  const [previewUrl, setPreviewUrl] = useState<string | undefined>();
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
@@ -27,7 +26,9 @@ const MaterialAddRow = ({ existingIds, onAdd }: MaterialAddRowProps) => {
       showToast(t('materials.imageTooLarge'), 'error');
       return;
     }
-    setImageData(await readFileAsDataUrl(file));
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setIconFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
   };
 
   const handleAdd = () => {
@@ -35,16 +36,20 @@ const MaterialAddRow = ({ existingIds, onAdd }: MaterialAddRowProps) => {
     const price = defaultPrice === '' ? 0 : Number(defaultPrice);
     if (!trimmedLabel || Number.isNaN(price) || price < 0) return;
 
-    onAdd({
-      id: createUniqueMaterialId(trimmedLabel, existingIds),
-      label: trimmedLabel,
-      defaultPrice: price,
-      ...(imageData ? { imageData } : {}),
-    });
+    onAdd(
+      {
+        label: trimmedLabel,
+        defaultPrice: price,
+        ...(iconFile ? { customIcon: true } : {}),
+      },
+      iconFile
+    );
 
     setLabel('');
     setDefaultPrice('');
-    setImageData(undefined);
+    setIconFile(undefined);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(undefined);
   };
 
   return (
@@ -54,8 +59,8 @@ const MaterialAddRow = ({ existingIds, onAdd }: MaterialAddRowProps) => {
           className="calc-btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center cursor-pointer overflow-hidden"
           aria-label={t('materials.uploadIcon')}
         >
-          {imageData ? (
-            <img src={imageData} alt="" className="w-full h-full object-cover" />
+          {previewUrl ? (
+            <img src={previewUrl} alt="" className="w-full h-full object-cover" />
           ) : (
             <UploadIcon className="w-4 h-4 text-white/60" />
           )}

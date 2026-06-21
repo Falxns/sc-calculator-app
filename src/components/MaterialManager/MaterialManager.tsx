@@ -9,8 +9,10 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { createUniqueMaterialId } from '../../utils/slugify';
 import useSortableSensors from '../../hooks/useSortableSensors';
 import type { Material } from '../../types';
+import { deleteIcon, putIconFromFile } from '../../utils/iconStore';
 import MaterialSortableRow from './MaterialSortableRow';
 import MaterialEditRow from './MaterialEditRow';
 import MaterialAddRow from './MaterialAddRow';
@@ -42,10 +44,22 @@ const MaterialManager = ({
   }, []);
 
   const handleSaveEdit = useCallback(
-    (
+    async (
       id: string,
-      updates: { label: string; defaultPrice: number; imageData?: string; clearImage?: boolean }
+      updates: {
+        label: string;
+        defaultPrice: number;
+        customIcon?: boolean;
+        iconFile?: File;
+        clearIcon?: boolean;
+      }
     ) => {
+      if (updates.clearIcon) {
+        await deleteIcon(id);
+      } else if (updates.iconFile) {
+        await putIconFromFile(id, updates.iconFile);
+      }
+
       setMaterials((prev) => ({
         materials: prev.materials.map((material) => {
           if (material.id !== id) return material;
@@ -56,10 +70,10 @@ const MaterialManager = ({
             defaultPrice: updates.defaultPrice,
           };
 
-          if (updates.clearImage) {
-            delete updated.imageData;
-          } else if (updates.imageData) {
-            updated.imageData = updates.imageData;
+          if (updates.clearIcon) {
+            delete updated.customIcon;
+          } else if (updates.customIcon) {
+            updated.customIcon = true;
           }
 
           return updated;
@@ -71,12 +85,23 @@ const MaterialManager = ({
   );
 
   const handleAddMaterial = useCallback(
-    (material: Material) => {
+    async (draft: Pick<Material, 'label' | 'defaultPrice'> & { customIcon?: boolean }, iconFile?: File) => {
+      const id = createUniqueMaterialId(draft.label, materialIds);
+      if (iconFile) await putIconFromFile(id, iconFile);
+
       setMaterials((prev) => ({
-        materials: [...prev.materials, material],
+        materials: [
+          ...prev.materials,
+          {
+            id,
+            label: draft.label,
+            defaultPrice: draft.defaultPrice,
+            ...(iconFile ? { customIcon: true } : {}),
+          },
+        ],
       }));
     },
-    [setMaterials]
+    [materialIds, setMaterials]
   );
 
   const handleRemoveMaterial = useCallback(
@@ -85,6 +110,7 @@ const MaterialManager = ({
       setMaterials((prev) => {
         if (prev.materials.length <= 1) return prev;
         const remainingMaterials = prev.materials.filter((m) => m.id !== materialId);
+        void deleteIcon(materialId);
         onMaterialRemoved(materialId, remainingMaterials);
         return { materials: remainingMaterials };
       });
@@ -136,7 +162,7 @@ const MaterialManager = ({
                 />
               )
             )}
-            <MaterialAddRow existingIds={materialIds} onAdd={handleAddMaterial} />
+            <MaterialAddRow onAdd={handleAddMaterial} />
           </ul>
         </SortableContext>
       </DndContext>

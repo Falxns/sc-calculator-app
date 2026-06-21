@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useLocale } from '../../context/LocaleContext';
 import type { Material } from '../../types';
-import { getMaterialImageSrc } from '../../utils/materialImage';
+import MaterialIcon from '../MaterialIcon/MaterialIcon';
 import DragHandle from '../DragHandle/DragHandle';
 import EditIcon from '../icons/EditIcon';
 import TrashIcon from '../icons/TrashIcon';
@@ -27,7 +27,6 @@ const MaterialSortableRow = ({
   onRemove,
 }: MaterialSortableRowProps) => {
   const { t } = useLocale();
-  const imageSrc = getMaterialImageSrc(material);
   const {
     attributes,
     listeners,
@@ -60,11 +59,7 @@ const MaterialSortableRow = ({
           attributes={attributes}
           buttonClassName="calc-btn w-7 h-7 min-w-7 p-0 shrink-0 flex items-center justify-center cursor-grab active:cursor-grabbing disabled:opacity-30 disabled:cursor-not-allowed touch-none"
         />
-        {imageSrc ? (
-          <img src={imageSrc} alt="" className="w-6 h-6 shrink-0" loading="lazy" decoding="async" />
-        ) : (
-          <span className="w-6 h-6 shrink-0 rounded bg-white/10" />
-        )}
+        <MaterialIcon material={material} />
         <span className="flex-1 min-w-0 truncate">{material.label}</span>
         <span className="text-white/60 shrink-0">{material.defaultPrice.toLocaleString()}</span>
         <button

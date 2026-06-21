@@ -9,9 +9,12 @@ import useMaterials from './hooks/useMaterials';
 import useCalculatorProfiles from './hooks/useCalculatorProfiles';
 import { DEFAULT_MATERIALS } from './constants/materials';
 import type { Material, MessageBuilderState } from './types';
-import type { AppBackup } from './utils/backupIo';
-import { createFullBackupFromStorage } from './utils/backupIo';
+import {
+  createFullBackupFromStorage,
+  type AppBackup,
+} from './utils/backupIo';
 import { normalizeProfilesState } from './utils/calculatorProfiles';
+import { applyImportedMaterialsIcons } from './utils/iconStore';
 import { mergeAppSnapshot, type BackupImportMode } from './utils/backupMerge';
 
 const App = () => {
@@ -39,25 +42,32 @@ const App = () => {
     handleMaterialsImported,
   } = useCalculatorProfiles(materials);
 
-  const applyBackup = (snapshot: {
+  const applyBackup = async (snapshot: {
     materials: Material[];
     profiles: AppBackup['profiles'];
     messages: MessageBuilderState;
+    icons?: Record<string, string>;
   }) => {
-    setMaterialsState({ materials: snapshot.materials });
-    setProfilesState(normalizeProfilesState(snapshot.profiles, snapshot.materials));
+    const materials = await applyImportedMaterialsIcons(snapshot.materials, snapshot.icons);
+    setMaterialsState({ materials });
+    setProfilesState(normalizeProfilesState(snapshot.profiles, materials));
     onMessagesImportRef.current(snapshot.messages);
-    handleMaterialsImported(snapshot.materials);
+    handleMaterialsImported(materials);
   };
 
-  const handleFullBackupImport = (backup: AppBackup, mode: BackupImportMode) => {
+  const handleFullBackupImport = async (backup: AppBackup, mode: BackupImportMode) => {
     if (mode === 'replace') {
-      applyBackup(backup);
+      await applyBackup(backup);
       return;
     }
 
-    const current = createFullBackupFromStorage();
-    applyBackup(mergeAppSnapshot(current, backup));
+    const current = await createFullBackupFromStorage();
+    const merged = mergeAppSnapshot(current, backup);
+    const mergedIcons = {
+      ...(current.icons ?? {}),
+      ...(backup.icons ?? {}),
+    };
+    await applyBackup({ ...merged, icons: mergedIcons });
   };
 
   const calculatorTotal = calculatorState.calculators.reduce(
