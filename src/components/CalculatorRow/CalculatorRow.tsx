@@ -1,13 +1,20 @@
-import React from 'react';
+import { memo } from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { useLocale } from '../../context/LocaleContext';
 import ResetIcon from '../icons/ResetIcon';
 import TrashIcon from '../icons/TrashIcon';
-import type { Calculator, CalculatorState, Material } from '../../types';
+import DragHandle from '../DragHandle/DragHandle';
+import MaterialSelect from '../MaterialSelect/MaterialSelect';
+import type { Calculator, Material } from '../../types';
 import { findMaterial, getMaterialImageSrc } from '../../utils/materialImage';
 
 interface CalculatorRowProps {
   materials: Material[];
-  setCalculatorState: React.Dispatch<React.SetStateAction<CalculatorState>>;
   calculator: Calculator;
+  onFieldChange: (id: string, key: 'price' | 'quantity', value: number) => void;
+  onMaterialChange: (id: string, materialId: string) => void;
+  onResetQuantity: (id: string) => void;
   onRemove: (id: string) => void;
   onCopy: (value: number) => void;
 }
@@ -15,14 +22,35 @@ interface CalculatorRowProps {
 const CalculatorRow = ({
   materials,
   calculator,
-  setCalculatorState,
+  onFieldChange,
+  onMaterialChange,
+  onResetQuantity,
   onRemove,
   onCopy,
 }: CalculatorRowProps) => {
+  const { t } = useLocale();
   const { id, materialId, price, quantity } = calculator;
   const material = findMaterial(materials, materialId);
+  const materialName = material?.label ?? materialId;
   const subtotal = price * quantity;
   const imageSrc = getMaterialImageSrc(material);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : undefined,
+    opacity: isDragging ? 0.85 : undefined,
+  };
 
   const rejectRawInput = (raw: string) =>
     raw.includes('-') || raw.includes('+') || raw.includes('e') || raw.includes('E');
@@ -36,80 +64,57 @@ const CalculatorRow = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>, key: 'price' | 'quantity') => {
     const raw = e.target.value;
     if (rejectRawInput(raw)) return;
-
-    const nextValue = raw === '' ? 0 : Number(raw);
-    setCalculatorState((prev) => ({
-      ...prev,
-      calculators: prev.calculators.map((calc) =>
-        calc.id === id ? { ...calc, [key]: nextValue } : calc
-      ),
-    }));
-  };
-
-  const handleMaterialChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const nextMaterial = findMaterial(materials, e.target.value);
-    if (!nextMaterial) return;
-
-    setCalculatorState((prev) => ({
-      ...prev,
-      calculators: prev.calculators.map((calc) =>
-        calc.id === id
-          ? { ...calc, materialId: nextMaterial.id, price: nextMaterial.defaultPrice }
-          : calc
-      ),
-    }));
-  };
-
-  const resetQuantity = () => {
-    setCalculatorState((prev) => ({
-      ...prev,
-      calculators: prev.calculators.map((calc) =>
-        calc.id === id ? { ...calc, quantity: 0 } : calc
-      ),
-    }));
+    onFieldChange(id, key, raw === '' ? 0 : Number(raw));
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 py-2 first:pt-0 last:pb-0 w-full sm:grid sm:grid-cols-[auto_minmax(7rem,1.2fr)_minmax(5rem,1fr)_minmax(4rem,0.8fr)_minmax(6rem,1.2fr)_auto] sm:gap-x-3 sm:gap-y-0">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex flex-wrap items-center gap-2 py-2 first:pt-0 last:pb-0 w-full sm:grid sm:grid-cols-[auto_auto_minmax(7rem,1.2fr)_minmax(5rem,1fr)_minmax(4rem,0.8fr)_minmax(6rem,1.2fr)_auto] sm:gap-x-3 sm:gap-y-0 ${
+        isDragging ? 'relative' : ''
+      }`}
+    >
+      <DragHandle
+        label={materialName}
+        setActivatorNodeRef={setActivatorNodeRef}
+        listeners={listeners}
+        attributes={attributes}
+      />
       {imageSrc ? (
-        <img src={imageSrc} alt={material?.label ?? materialId} className="w-9 h-9 shrink-0" />
+        <img src={imageSrc} alt={materialName} className="w-9 h-9 shrink-0" />
       ) : (
         <span className="w-9 h-9 shrink-0 rounded-lg bg-white/10" aria-hidden />
       )}
-      <select
-        className="input py-2 px-2 text-sm w-full min-w-[7rem] flex-1 sm:flex-none sm:min-w-0"
+      <MaterialSelect
+        materials={materials}
         value={materialId}
-        aria-label={`Material for ${material?.label ?? materialId}`}
-        onChange={handleMaterialChange}
-      >
-        {materials.map((m) => (
-          <option key={m.id} value={m.id}>
-            {m.label}
-          </option>
-        ))}
-      </select>
+        ariaLabel={t('calc.materialFor', { name: materialName })}
+        className="w-full min-w-[7rem] flex-1 sm:flex-none sm:min-w-0"
+        onChange={(nextMaterialId) => onMaterialChange(id, nextMaterialId)}
+      />
       <input
-        className="input py-2 text-base text-center w-full min-w-[5rem] flex-1 sm:flex-none sm:min-w-0"
+        className="calc-control py-2 text-base text-center w-full min-w-[5rem] flex-1 sm:flex-none sm:min-w-0"
         type="number"
         value={price === 0 ? '' : price}
-        placeholder="Price"
-        aria-label={`Price for ${material?.label ?? materialId}`}
+        placeholder={t('common.price')}
+        aria-label={t('calc.priceFor', { name: materialName })}
         onChange={(e) => handleChange(e, 'price')}
         onKeyDown={excludeSpecialCharacters}
       />
       <input
-        className="input py-2 text-base text-center w-full min-w-[4rem] flex-1 sm:flex-none sm:min-w-0"
+        className="calc-control py-2 text-base text-center w-full min-w-[4rem] flex-1 sm:flex-none sm:min-w-0"
         type="number"
         value={quantity === 0 ? '' : quantity}
-        placeholder="Qty"
-        aria-label={`Quantity for ${material?.label ?? materialId}`}
+        placeholder={t('common.qty')}
+        aria-label={t('calc.quantityFor', { name: materialName })}
         onChange={(e) => handleChange(e, 'quantity')}
         onKeyDown={excludeSpecialCharacters}
       />
       <button
         type="button"
         className="copyable text-base font-semibold text-center w-full min-w-[5rem] flex-1 sm:flex-none sm:min-w-0 py-2"
-        aria-label={`Copy subtotal ${subtotal}`}
+        aria-label={t('calc.copySubtotal', { subtotal })}
         onClick={() => onCopy(subtotal)}
       >
         {subtotal.toLocaleString()}
@@ -117,16 +122,16 @@ const CalculatorRow = ({
       <div className="flex items-center gap-1.5 shrink-0 ml-auto sm:ml-0">
         <button
           type="button"
-          className="btn w-auto p-1.5"
-          aria-label="Reset quantity"
-          onClick={resetQuantity}
+          className="calc-btn w-auto p-1.5"
+          aria-label={t('calc.resetQuantity')}
+          onClick={() => onResetQuantity(id)}
         >
           <ResetIcon className="w-4 h-4" />
         </button>
         <button
           type="button"
-          className="btn w-auto p-1.5"
-          aria-label="Remove row"
+          className="calc-btn w-auto p-1.5"
+          aria-label={t('calc.removeRow')}
           onClick={() => onRemove(id)}
         >
           <TrashIcon className="w-4 h-4" />
@@ -136,4 +141,4 @@ const CalculatorRow = ({
   );
 };
 
-export default CalculatorRow;
+export default memo(CalculatorRow);

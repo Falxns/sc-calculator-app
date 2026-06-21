@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useLocale } from '../../context/LocaleContext';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ const ConfirmModal = ({
   confirmLabel,
   cancelLabel,
 }: ConfirmModalProps) => {
+  const { t } = useLocale();
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleEscapeKey = (e: KeyboardEvent) => {
@@ -44,7 +46,7 @@ const ConfirmModal = ({
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
       <button
         type="button"
-        aria-label="Close"
+        aria-label={t('common.close')}
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onCancel}
       />
@@ -55,7 +57,7 @@ const ConfirmModal = ({
         aria-labelledby="confirm-modal-message"
       >
         <p className="text-base font-medium text-center" id="confirm-modal-message">
-          {message || 'Are you sure you want to delete this message?'}
+          {message ?? t('messages.deleteConfirm')}
         </p>
         <div className="flex gap-4">
           <button
@@ -63,7 +65,7 @@ const ConfirmModal = ({
             className="btn w-auto focus:ring-2 focus:ring-white/50"
             onClick={onCancel}
           >
-            {cancelLabel || 'Cancel'}
+            {cancelLabel ?? t('common.cancel')}
           </button>
           <button
             type="button"
@@ -71,7 +73,7 @@ const ConfirmModal = ({
             onClick={onConfirm}
             ref={confirmButtonRef}
           >
-            {confirmLabel || 'Delete'}
+            {confirmLabel ?? t('common.delete')}
           </button>
         </div>
       </div>

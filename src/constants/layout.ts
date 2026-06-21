@@ -1,6 +1,3 @@
-/** Width of profile toolbar column. */
-export const SECTION_SIDE_WIDTH = '8.25rem';
-
 export const sectionWrapperClass = 'relative w-full';
 
 export const sectionSideLeftClass = 'absolute top-4 right-full mr-2';

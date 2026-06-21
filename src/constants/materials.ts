@@ -1,12 +1,14 @@
 import type { Material } from '../types';
 
+export { createUniqueMaterialId, slugify } from '../utils/slugify';
+
 export const DEFAULT_MATERIALS: Material[] = [
-  { id: 'slastena', label: 'Сластена', defaultPrice: 9000, imgSrc: 'slastena' },
-  { id: 'solevik', label: 'Солевик', defaultPrice: 2000, imgSrc: 'solevik' },
-  { id: 'kub', label: 'Куборбуз', defaultPrice: 2000, imgSrc: 'kub' },
-  { id: 'limonnik', label: 'Лимонник', defaultPrice: 2000, imgSrc: 'limonnik' },
-  { id: 'spirten', label: 'Спиртень', defaultPrice: 400, imgSrc: 'spirten' },
-  { id: 'myatnoplod', label: 'Мятноплод', defaultPrice: 150, imgSrc: 'myatnoplod' },
+  { id: 'slastena', label: 'Мякоть сластены', defaultPrice: 8000, imgSrc: 'slastena' },
+  { id: 'solevik', label: 'Мякоть солевика', defaultPrice: 1500, imgSrc: 'solevik' },
+  { id: 'limonnik', label: 'Мякоть лимонника', defaultPrice: 1000, imgSrc: 'limonnik' },
+  { id: 'kub', label: 'Мякоть куборбуза', defaultPrice: 580, imgSrc: 'kub' },
+  { id: 'spirten', label: 'Мякоть спиртня', defaultPrice: 280, imgSrc: 'spirten' },
+  { id: 'myatnoplod', label: 'Мякоть мятноплода', defaultPrice: 75, imgSrc: 'myatnoplod' },
 ];
 
 export const createCalculator = (materials: Material[], materialId?: string) => {
@@ -24,18 +26,3 @@ export const createCalculator = (materials: Material[], materialId?: string) => 
 
 export const createDefaultCalculators = (materials: Material[]) =>
   materials.map((material) => createCalculator(materials, material.id));
-
-export const slugify = (label: string) =>
-  label
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '') || 'material';
-
-export const createUniqueMaterialId = (label: string, existingIds: string[]) => {
-  const base = slugify(label);
-  if (!existingIds.includes(base)) return base;
-  let i = 2;
-  while (existingIds.includes(`${base}-${i}`)) i++;
-  return `${base}-${i}`;
-};

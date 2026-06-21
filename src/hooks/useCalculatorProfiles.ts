@@ -1,14 +1,16 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import useLocalStorage from './useLocalStorage';
 import { createDefaultCalculators, DEFAULT_MATERIALS } from '../constants/materials';
-import type { CalculatorProfilesState, CalculatorState, Material } from '../types';
+import type { CalculatorProfile, CalculatorProfilesState, CalculatorState, Material } from '../types';
 import {
+  cloneProfile,
   createDefaultProfile,
-  createUniqueProfileName,
   loadProfilesStateFromStorage,
   normalizeProfilesState,
   PROFILES_STORAGE_KEY,
+  readMaterialIdRemap,
   remapProfilesForMaterials,
+  remapProfilesMaterialIds,
 } from '../utils/calculatorProfiles';
 
 const useCalculatorProfiles = (materials: Material[]) => {
@@ -17,16 +19,24 @@ const useCalculatorProfiles = (materials: Material[]) => {
   const [profilesState, setProfilesState] = useLocalStorage<CalculatorProfilesState>(
     PROFILES_STORAGE_KEY,
     loadProfilesStateFromStorage(resolvedMaterials),
-    (parsed) => normalizeProfilesState(parsed, resolvedMaterials)
+    (parsed) => {
+      const idMap = readMaterialIdRemap();
+      const normalized = normalizeProfilesState(parsed, resolvedMaterials);
+      return remapProfilesMaterialIds(normalized, idMap, resolvedMaterials);
+    },
+    400
   );
 
   const activeProfile =
     profilesState.profiles.find((p) => p.id === profilesState.activeProfileId) ??
     profilesState.profiles[0];
 
-  const calculatorState: CalculatorState = {
-    calculators: activeProfile?.calculators ?? createDefaultCalculators(resolvedMaterials),
-  };
+  const calculatorState = useMemo<CalculatorState>(
+    () => ({
+      calculators: activeProfile?.calculators ?? createDefaultCalculators(resolvedMaterials),
+    }),
+    [activeProfile]
+  );
 
   const setCalculatorState = useCallback(
     (action: React.SetStateAction<CalculatorState>) => {
@@ -76,6 +86,43 @@ const useCalculatorProfiles = (materials: Material[]) => {
     });
   };
 
+  const renameProfile = (profileId: string, name: string) => {
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+
+    setProfilesState((prev) => ({
+      ...prev,
+      profiles: prev.profiles.map((profile) =>
+        profile.id === profileId ? { ...profile, name: trimmedName } : profile
+      ),
+    }));
+  };
+
+  const duplicateProfile = (profileId: string, name: string) => {
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+
+    setProfilesState((prev) => {
+      const source = prev.profiles.find((p) => p.id === profileId);
+      if (!source) return prev;
+
+      const copy = cloneProfile(source, trimmedName);
+      return {
+        activeProfileId: copy.id,
+        profiles: [...prev.profiles, copy],
+      };
+    });
+  };
+
+  const reorderProfiles = (profiles: CalculatorProfile[]) => {
+    setProfilesState((prev) => {
+      if (profiles.length !== prev.profiles.length) return prev;
+      const ids = new Set(profiles.map((p) => p.id));
+      if (prev.profiles.some((p) => !ids.has(p.id))) return prev;
+      return { ...prev, profiles };
+    });
+  };
+
   const handleMaterialRemoved = (materialId: string, remainingMaterials: Material[]) => {
     const fallback = remainingMaterials[0];
     if (!fallback) return;
@@ -97,12 +144,6 @@ const useCalculatorProfiles = (materials: Material[]) => {
     setProfilesState((prev) => remapProfilesForMaterials(prev, newMaterials));
   };
 
-  const suggestProfileName = () =>
-    createUniqueProfileName(
-      'Profile',
-      profilesState.profiles.map((p) => p.name)
-    );
-
   return {
     calculatorState,
     setCalculatorState,
@@ -112,9 +153,11 @@ const useCalculatorProfiles = (materials: Material[]) => {
     switchProfile,
     addProfile,
     deleteProfile,
+    renameProfile,
+    duplicateProfile,
+    reorderProfiles,
     handleMaterialRemoved,
     handleMaterialsImported,
-    suggestProfileName,
   };
 };
 

@@ -1,6 +1,7 @@
 import { createDefaultCalculators } from '../constants/materials';
 import type { Calculator, CalculatorProfile, CalculatorProfilesState, Material } from '../types';
 import { migrateCalculators, normalizeCalculatorState } from './calculatorMigration';
+import { MATERIAL_ID_REMAP_KEY } from './materialsNormalize';
 
 export const PROFILES_STORAGE_KEY = 'calculatorProfilesState';
 export const LEGACY_CALCULATOR_STORAGE_KEY = 'calculatorState';
@@ -74,6 +75,15 @@ export const createUniqueProfileName = (baseName: string, existingNames: string[
   return `${trimmed} ${i}`;
 };
 
+export const cloneProfile = (profile: CalculatorProfile, name: string): CalculatorProfile => ({
+  id: crypto.randomUUID(),
+  name,
+  calculators: profile.calculators.map((calc) => ({
+    ...calc,
+    id: crypto.randomUUID(),
+  })),
+});
+
 export const remapCalculatorsForMaterials = (
   calculators: Calculator[],
   newMaterials: Material[]
@@ -99,6 +109,58 @@ export const remapProfilesForMaterials = (
     calculators: remapCalculatorsForMaterials(profile.calculators, newMaterials),
   })),
 });
+
+export const remapProfilesMaterialIds = (
+  state: CalculatorProfilesState,
+  idMap: Record<string, string>,
+  materials: Material[]
+): CalculatorProfilesState => {
+  const entries = Object.entries(idMap);
+  if (!entries.length) return state;
+
+  const materialById = new Map(materials.map((material) => [material.id, material]));
+
+  return {
+    ...state,
+    profiles: state.profiles.map((profile) => ({
+      ...profile,
+      calculators: profile.calculators.map((calc) => {
+        const mappedId = idMap[calc.materialId];
+        if (!mappedId) return calc;
+
+        const material = materialById.get(mappedId);
+        if (!material) return calc;
+
+        return { ...calc, materialId: mappedId };
+      }),
+    })),
+  };
+};
+
+const readMaterialIdRemap = (): Record<string, string> => {
+  try {
+    const raw = localStorage.getItem(MATERIAL_ID_REMAP_KEY);
+    if (!raw) return {};
+
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return {};
+
+    const idMap: Record<string, string> = {};
+    for (const [from, to] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof from === 'string' && typeof to === 'string' && from && to) {
+        idMap[from] = to;
+      }
+    }
+
+    localStorage.removeItem(MATERIAL_ID_REMAP_KEY);
+    return idMap;
+  } catch {
+    localStorage.removeItem(MATERIAL_ID_REMAP_KEY);
+    return {};
+  }
+};
+
+export { readMaterialIdRemap };
 
 export const loadProfilesStateFromStorage = (materials: Material[]): CalculatorProfilesState => {
   try {

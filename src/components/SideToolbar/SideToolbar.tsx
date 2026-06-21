@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useLocale } from '../../context/LocaleContext';
+import { useToast } from '../../context/ToastContext';
 import type { Material } from '../../types';
 import type { AppBackup } from '../../utils/backupIo';
-import useToast from '../../hooks/useToast';
+import type { BackupImportMode } from '../../utils/backupMerge';
 import { downloadFullBackupJson, readBackupFromFile } from '../../utils/backupIo';
 import Modal from '../Modal/Modal';
-import ConfirmModal from '../ConfirmModal/ConfirmModal';
-import Toast from '../Toast/Toast';
+import BackupImportModal from '../BackupImportModal/BackupImportModal';
+import LanguageToggle from '../LanguageToggle/LanguageToggle';
 import SettingsIcon from '../icons/SettingsIcon';
 import DownloadIcon from '../icons/DownloadIcon';
 import UploadIcon from '../icons/UploadIcon';
@@ -17,10 +19,10 @@ interface SideToolbarProps {
   setMaterials: React.Dispatch<React.SetStateAction<{ materials: Material[] }>>;
   onMaterialRemoved: (materialId: string, remainingMaterials: Material[]) => void;
   onMaterialsImported: (materials: Material[]) => void;
-  onFullBackupImport: (backup: AppBackup) => void;
+  onFullBackupImport: (backup: AppBackup, mode: BackupImportMode) => void;
 }
 
-const toolbarButtonClass = 'btn w-auto p-2.5';
+const toolbarButtonClass = 'btn w-11 h-11 min-w-11 p-0 flex items-center justify-center';
 
 const SideToolbar = ({
   materials,
@@ -29,17 +31,18 @@ const SideToolbar = ({
   onMaterialsImported,
   onFullBackupImport,
 }: SideToolbarProps) => {
+  const { t } = useLocale();
+  const { showToast } = useToast();
   const [isManagerOpen, setIsManagerOpen] = useState(false);
   const [pendingBackup, setPendingBackup] = useState<AppBackup | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast, showToast } = useToast();
 
   const handleExport = () => {
     try {
       downloadFullBackupJson();
-      showToast('Backup exported!', 'success');
+      showToast(t('toast.backupExported'), 'success');
     } catch {
-      showToast('Export failed!', 'error');
+      showToast(t('toast.exportFailed'), 'error');
     }
   };
 
@@ -58,32 +61,35 @@ const SideToolbar = ({
       if (result.type === 'materials') {
         setMaterials({ materials: result.materials });
         onMaterialsImported(result.materials);
-        showToast('Materials imported!', 'success');
+        showToast(t('toast.materialsImported'), 'success');
         return;
       }
 
       setPendingBackup(result.backup);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Import failed!';
+      const message = err instanceof Error ? err.message : t('toast.exportFailed');
       showToast(message, 'error');
     }
   };
 
-  const confirmFullImport = () => {
+  const confirmFullImport = (mode: BackupImportMode) => {
     if (pendingBackup) {
-      onFullBackupImport(pendingBackup);
-      showToast('Backup imported!', 'success');
+      onFullBackupImport(pendingBackup, mode);
+      showToast(
+        mode === 'merge' ? t('toast.backupMerged') : t('toast.backupImported'),
+        'success'
+      );
     }
     setPendingBackup(null);
   };
 
   return (
     <>
-      <div className="fixed top-4 right-4 z-30 flex flex-col gap-2">
+      <div className="fixed top-4 right-4 z-30 flex flex-col items-stretch gap-2">
         <button
           type="button"
           className={toolbarButtonClass}
-          aria-label="Manage materials"
+          aria-label={t('side.manageMaterials')}
           aria-haspopup="dialog"
           aria-expanded={isManagerOpen}
           onClick={() => setIsManagerOpen(true)}
@@ -93,7 +99,7 @@ const SideToolbar = ({
         <button
           type="button"
           className={toolbarButtonClass}
-          aria-label="Export full backup as JSON"
+          aria-label={t('side.exportBackup')}
           onClick={handleExport}
         >
           <DownloadIcon className="w-6 h-6" />
@@ -101,11 +107,12 @@ const SideToolbar = ({
         <button
           type="button"
           className={toolbarButtonClass}
-          aria-label="Import backup from JSON"
+          aria-label={t('side.importBackup')}
           onClick={handleImportClick}
         >
           <UploadIcon className="w-6 h-6" />
         </button>
+        <LanguageToggle />
         <input
           ref={fileInputRef}
           type="file"
@@ -115,7 +122,11 @@ const SideToolbar = ({
         />
       </div>
 
-      <Modal isOpen={isManagerOpen} onClose={() => setIsManagerOpen(false)} title="Manage materials">
+      <Modal
+        isOpen={isManagerOpen}
+        onClose={() => setIsManagerOpen(false)}
+        title={t('modal.manageMaterials')}
+      >
         <MaterialManager
           materials={materials}
           setMaterials={setMaterials}
@@ -124,17 +135,14 @@ const SideToolbar = ({
       </Modal>
 
       {createPortal(
-        <ConfirmModal
+        <BackupImportModal
           isOpen={pendingBackup !== null}
-          message="Import backup? This replaces materials, profiles, and messages."
-          confirmLabel="Import"
+          backup={pendingBackup}
           onConfirm={confirmFullImport}
           onCancel={() => setPendingBackup(null)}
         />,
         document.body
       )}
-
-      <Toast toast={toast} />
     </>
   );
 };

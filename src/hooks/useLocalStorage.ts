@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 const useLocalStorage = <T>(
   key: string,
   initialValue: T,
-  deserialize?: (parsed: unknown) => T
+  deserialize?: (parsed: unknown) => T,
+  debounceMs = 0
 ) => {
   const [value, setValue] = useState<T>(() => {
     try {
@@ -18,12 +19,22 @@ const useLocalStorage = <T>(
   });
 
   useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch (err: unknown) {
-      console.warn(`Error saving state to localStorage for key ${key}:`, err);
+    const write = () => {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (err: unknown) {
+        console.warn(`Error saving state from localStorage for key ${key}:`, err);
+      }
+    };
+
+    if (debounceMs <= 0) {
+      write();
+      return;
     }
-  }, [key, value]);
+
+    const timer = window.setTimeout(write, debounceMs);
+    return () => window.clearTimeout(timer);
+  }, [key, value, debounceMs]);
 
   return [value, setValue] as const;
 };

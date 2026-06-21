@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useLocale } from '../../context/LocaleContext';
 
 interface ModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface ModalProps {
 }
 
 const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
+  const { t } = useLocale();
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,7 +33,7 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
       <button
         type="button"
-        aria-label="Close"
+        aria-label={t('common.close')}
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />

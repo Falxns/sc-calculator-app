@@ -1,5 +1,19 @@
-import { useEffect } from 'react';
-import useToast from '../../hooks/useToast';
+import { useCallback, useEffect, useMemo } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { useToast } from '../../context/ToastContext';
+import useSortableSensors from '../../hooks/useSortableSensors';
+import useLocalStorage from '../../hooks/useLocalStorage';
+import { useLocale } from '../../context/LocaleContext';
 import { createCalculator, DEFAULT_MATERIALS } from '../../constants/materials';
 import {
   sectionWrapperClass,
@@ -9,12 +23,15 @@ import {
   sideActionButtonClass,
 } from '../../constants/layout';
 import type { CalculatorProfile, CalculatorState, Material } from '../../types';
+import type { CalculatorViewMode } from '../../types/calculatorView';
 import { copyToClipboard } from '../../utils/copyToClipboard';
 import CalculatorRow from '../CalculatorRow/CalculatorRow';
-import ProfileToolbar from '../ProfileToolbar/ProfileToolbar';
+import CalculatorGridTile from '../CalculatorGridTile/CalculatorGridTile';
+import CalculatorViewToggle from '../CalculatorViewToggle/CalculatorViewToggle';
+import ProfileSelector from '../ProfileSelector/ProfileSelector';
+import ProfileSettings from '../ProfileSettings/ProfileSettings';
 import ResetIcon from '../icons/ResetIcon';
 import PlusIcon from '../icons/PlusIcon';
-import Toast from '../Toast/Toast';
 
 interface PriceCalculatorProps {
   materials: Material[];
@@ -25,7 +42,9 @@ interface PriceCalculatorProps {
   onSwitchProfile: (profileId: string) => void;
   onAddProfile: (name: string) => void;
   onDeleteProfile: (profileId: string) => void;
-  suggestProfileName: () => string;
+  onRenameProfile: (profileId: string, name: string) => void;
+  onDuplicateProfile: (profileId: string, name: string) => void;
+  onReorderProfiles: (profiles: CalculatorProfile[]) => void;
   onMaterialRemovedRef: React.MutableRefObject<
     (materialId: string, remainingMaterials: Material[]) => void
   >;
@@ -43,49 +62,125 @@ const PriceCalculator = ({
   onSwitchProfile,
   onAddProfile,
   onDeleteProfile,
-  suggestProfileName,
+  onRenameProfile,
+  onDuplicateProfile,
+  onReorderProfiles,
   onMaterialRemovedRef,
   onMaterialsImportedRef,
   handleMaterialRemoved,
   handleMaterialsImported,
 }: PriceCalculatorProps) => {
+  const { t } = useLocale();
   const resolvedMaterials = materials.length ? materials : DEFAULT_MATERIALS;
-  const { toast, showToast } = useToast();
-
-  const total = calculatorState.calculators.reduce(
-    (acc, calc) => acc + calc.price * calc.quantity,
-    0
+  const { showToast } = useToast();
+  const sensors = useSortableSensors();
+  const [viewMode, setViewMode] = useLocalStorage<CalculatorViewMode>(
+    'calculatorViewMode',
+    'list',
+    (parsed) => (parsed === 'grid' ? 'grid' : 'list')
   );
 
-  const handleCopy = async (value: number) => {
-    try {
-      await copyToClipboard(String(value));
-      showToast('Copied!', 'success');
-    } catch {
-      showToast('Failed to copy!', 'error');
-    }
-  };
+  const calculatorIds = useMemo(
+    () => calculatorState.calculators.map((calc) => calc.id),
+    [calculatorState.calculators]
+  );
 
-  const addRow = () => {
+  const total = useMemo(
+    () =>
+      calculatorState.calculators.reduce(
+        (acc, calc) => acc + calc.price * calc.quantity,
+        0
+      ),
+    [calculatorState.calculators]
+  );
+
+  const handleCopy = useCallback(
+    async (value: number) => {
+      try {
+        await copyToClipboard(String(value));
+        showToast(t('toast.copied'), 'success');
+      } catch {
+        showToast(t('toast.copyFailed'), 'error');
+      }
+    },
+    [showToast, t]
+  );
+
+  const updateField = useCallback(
+    (id: string, key: 'price' | 'quantity', value: number) => {
+      setCalculatorState((prev) => ({
+        ...prev,
+        calculators: prev.calculators.map((calc) =>
+          calc.id === id ? { ...calc, [key]: value } : calc
+        ),
+      }));
+    },
+    [setCalculatorState]
+  );
+
+  const updateMaterial = useCallback(
+    (id: string, materialId: string) => {
+      setCalculatorState((prev) => ({
+        ...prev,
+        calculators: prev.calculators.map((calc) =>
+          calc.id === id ? { ...calc, materialId } : calc
+        ),
+      }));
+    },
+    [setCalculatorState]
+  );
+
+  const resetQuantity = useCallback(
+    (id: string) => {
+      setCalculatorState((prev) => ({
+        ...prev,
+        calculators: prev.calculators.map((calc) =>
+          calc.id === id ? { ...calc, quantity: 0 } : calc
+        ),
+      }));
+    },
+    [setCalculatorState]
+  );
+
+  const addRow = useCallback(() => {
     setCalculatorState((prev) => ({
       ...prev,
       calculators: [...prev.calculators, createCalculator(resolvedMaterials)],
     }));
-  };
+  }, [resolvedMaterials, setCalculatorState]);
 
-  const removeRow = (id: string) => {
-    setCalculatorState((prev) => ({
-      ...prev,
-      calculators: prev.calculators.filter((calc) => calc.id !== id),
-    }));
-  };
+  const removeRow = useCallback(
+    (id: string) => {
+      setCalculatorState((prev) => ({
+        ...prev,
+        calculators: prev.calculators.filter((calc) => calc.id !== id),
+      }));
+    },
+    [setCalculatorState]
+  );
 
-  const resetAllQuantities = () => {
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      setCalculatorState((prev) => {
+        const oldIndex = prev.calculators.findIndex((calc) => calc.id === active.id);
+        const newIndex = prev.calculators.findIndex((calc) => calc.id === over.id);
+        if (oldIndex === -1 || newIndex === -1) return prev;
+
+        return { calculators: arrayMove(prev.calculators, oldIndex, newIndex) };
+      });
+    },
+    [setCalculatorState]
+  );
+
+  const resetAllQuantities = useCallback(() => {
     setCalculatorState((prev) => ({
       ...prev,
       calculators: prev.calculators.map((calc) => ({ ...calc, quantity: 0 })),
     }));
-  };
+  }, [setCalculatorState]);
 
   useEffect(() => {
     onMaterialRemovedRef.current = handleMaterialRemoved;
@@ -95,43 +190,81 @@ const PriceCalculator = ({
   return (
     <div className={sectionWrapperClass}>
       <div className={sectionSideLeftClass}>
-        <ProfileToolbar
+        <ProfileSettings
           profiles={profiles}
           activeProfileId={activeProfileId}
-          onSwitch={onSwitchProfile}
-          onAdd={onAddProfile}
+          onReorder={onReorderProfiles}
+          onRename={onRenameProfile}
+          onDuplicate={onDuplicateProfile}
           onDelete={onDeleteProfile}
-          suggestProfileName={suggestProfileName}
+          onAdd={onAddProfile}
         />
       </div>
 
       <section className={sectionGlassClass}>
-        {calculatorState.calculators.length === 0 ? (
-          <p className="text-sm text-white/60 text-center py-6">
-            No rows yet. Use + to add a calculator row.
-          </p>
-        ) : (
-          <div className="w-full divide-y divide-white/10">
-            {calculatorState.calculators.map((calculator) => (
-              <CalculatorRow
-                key={calculator.id}
-                materials={resolvedMaterials}
-                setCalculatorState={setCalculatorState}
-                calculator={calculator}
-                onRemove={removeRow}
-                onCopy={handleCopy}
-              />
-            ))}
+        <div className="flex items-center gap-3 w-full">
+          <ProfileSelector
+            profiles={profiles}
+            activeProfileId={activeProfileId}
+            onSwitch={onSwitchProfile}
+          />
+          <div className="ml-auto shrink-0">
+            <CalculatorViewToggle value={viewMode} onChange={setViewMode} />
           </div>
+        </div>
+
+        {calculatorState.calculators.length === 0 ? (
+          <p className="text-sm text-white/60 text-center py-6">{t('calc.noRows')}</p>
+        ) : (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={calculatorIds}
+              strategy={viewMode === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}
+            >
+              {viewMode === 'list' ? (
+                <div className="w-full divide-y divide-white/10">
+                  {calculatorState.calculators.map((calculator) => (
+                    <CalculatorRow
+                      key={calculator.id}
+                      materials={resolvedMaterials}
+                      calculator={calculator}
+                      onFieldChange={updateField}
+                      onMaterialChange={updateMaterial}
+                      onResetQuantity={resetQuantity}
+                      onRemove={removeRow}
+                      onCopy={handleCopy}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(5.75rem,1fr))] gap-2 w-full">
+                  {calculatorState.calculators.map((calculator) => (
+                    <CalculatorGridTile
+                      key={calculator.id}
+                      materials={resolvedMaterials}
+                      calculator={calculator}
+                      onFieldChange={updateField}
+                      onMaterialChange={updateMaterial}
+                      onRemove={removeRow}
+                    />
+                  ))}
+                </div>
+              )}
+            </SortableContext>
+          </DndContext>
         )}
 
         <div className="flex items-center justify-center w-full">
           <div className="flex items-center gap-3">
-            <span className="text-base text-white/70">Total:</span>
+            <span className="text-base text-white/70">{t('calc.total')}</span>
             <button
               type="button"
               className="copyable text-2xl font-bold"
-              aria-label={`Copy total ${total}`}
+              aria-label={t('calc.copyTotal', { total })}
               onClick={() => handleCopy(total)}
             >
               {total.toLocaleString()}
@@ -140,21 +273,20 @@ const PriceCalculator = ({
           <button
             type="button"
             className="btn w-auto p-2 ml-8"
-            aria-label="Reset all quantities"
+            aria-label={t('calc.resetAllQty')}
             onClick={resetAllQuantities}
           >
             <ResetIcon className="w-5 h-5" />
           </button>
         </div>
 
-        <Toast toast={toast} />
       </section>
 
       <div className={sectionSideRightClass}>
         <button
           type="button"
           className={sideActionButtonClass}
-          aria-label="Add row"
+          aria-label={t('calc.addRow')}
           onClick={addRow}
         >
           <PlusIcon className="w-6 h-6" />

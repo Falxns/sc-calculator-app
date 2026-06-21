@@ -15,8 +15,12 @@ export const formatRowValue = (row: Calculator, materials: Material[]): string =
 
 export interface ResolveMessageResult {
   text: string;
-  warnings: string[];
+  warnings: TemplateWarning[];
 }
+
+export type TemplateWarning =
+  | { type: 'invalidPlaceholder'; match: string }
+  | { type: 'rowNotFound'; rowIndex: number };
 
 export const resolveMessageTemplate = (
   content: string,
@@ -24,20 +28,20 @@ export const resolveMessageTemplate = (
   materials: Material[],
   total: number
 ): ResolveMessageResult => {
-  const warnings: string[] = [];
+  const warnings: TemplateWarning[] = [];
 
   let text = content.replace(/\{total\}/gi, () => String(total));
 
   text = text.replace(/\{(\d+)\}/g, (match, numStr: string) => {
     const rowIndex = Number(numStr);
     if (!Number.isInteger(rowIndex) || rowIndex < 1) {
-      warnings.push(`Invalid placeholder ${match}`);
+      warnings.push({ type: 'invalidPlaceholder', match });
       return match;
     }
 
     const row = rows[rowIndex - 1];
     if (!row) {
-      warnings.push(`Row ${rowIndex} not found`);
+      warnings.push({ type: 'rowNotFound', rowIndex });
       return match;
     }
 
