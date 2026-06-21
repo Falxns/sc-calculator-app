@@ -48,7 +48,7 @@ const MaterialAddRow = ({ existingIds, onAdd }: MaterialAddRowProps) => {
   };
 
   return (
-    <li className="pt-2">
+    <li className="pt-2 pb-1">
       <div className="flex flex-wrap items-end gap-2">
         <label
           className="calc-btn w-9 h-9 min-w-9 p-0 shrink-0 flex items-center justify-center cursor-pointer overflow-hidden"

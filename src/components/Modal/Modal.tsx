@@ -48,7 +48,7 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
         <h2 id="modal-title" className="shrink-0 text-lg font-semibold w-full text-center">
           {title}
         </h2>
-        <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-1">{children}</div>
       </div>
     </div>
   );
