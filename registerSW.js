@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/sc-calculator-app/sw.js', { scope: '/sc-calculator-app/' })})}
