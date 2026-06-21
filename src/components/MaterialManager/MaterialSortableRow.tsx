@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useLocale } from '../../context/LocaleContext';
@@ -8,13 +9,13 @@ import EditIcon from '../icons/EditIcon';
 import TrashIcon from '../icons/TrashIcon';
 
 const squareBtnClass =
-  'btn w-7 h-7 min-w-7 p-0 shrink-0 flex items-center justify-center';
+  'calc-btn w-7 h-7 min-w-7 p-0 shrink-0 flex items-center justify-center';
 
 interface MaterialSortableRowProps {
   material: Material;
   dragDisabled: boolean;
   canRemove: boolean;
-  onEdit: (material: Material) => void;
+  onEdit: (materialId: string) => void;
   onRemove: (materialId: string) => void;
 }
 
@@ -26,6 +27,7 @@ const MaterialSortableRow = ({
   onRemove,
 }: MaterialSortableRowProps) => {
   const { t } = useLocale();
+  const imageSrc = getMaterialImageSrc(material);
   const {
     attributes,
     listeners,
@@ -56,21 +58,20 @@ const MaterialSortableRow = ({
           setActivatorNodeRef={setActivatorNodeRef}
           listeners={listeners}
           attributes={attributes}
+          buttonClassName="calc-btn w-7 h-7 min-w-7 p-0 shrink-0 flex items-center justify-center cursor-grab active:cursor-grabbing disabled:opacity-30 disabled:cursor-not-allowed touch-none"
         />
-        {getMaterialImageSrc(material) ? (
-          <img src={getMaterialImageSrc(material)} alt="" className="w-6 h-6 shrink-0" />
+        {imageSrc ? (
+          <img src={imageSrc} alt="" className="w-6 h-6 shrink-0" loading="lazy" decoding="async" />
         ) : (
           <span className="w-6 h-6 shrink-0 rounded bg-white/10" />
         )}
         <span className="flex-1 min-w-0 truncate">{material.label}</span>
-        <span className="text-white/60 shrink-0">
-          {material.defaultPrice.toLocaleString()}
-        </span>
+        <span className="text-white/60 shrink-0">{material.defaultPrice.toLocaleString()}</span>
         <button
           type="button"
           className={squareBtnClass}
           aria-label={t('materials.edit', { name: material.label })}
-          onClick={() => onEdit(material)}
+          onClick={() => onEdit(material.id)}
         >
           <EditIcon className="w-3.5 h-3.5" />
         </button>
@@ -88,4 +89,4 @@ const MaterialSortableRow = ({
   );
 };
 
-export default MaterialSortableRow;
+export default memo(MaterialSortableRow);
