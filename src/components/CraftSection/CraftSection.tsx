@@ -30,6 +30,7 @@ import { findMaterial } from '../../utils/materialImage';
 import DropdownMenu from '../DropdownMenu/DropdownMenu';
 import MaterialIcon from '../MaterialIcon/MaterialIcon';
 import ResetIcon from '../icons/ResetIcon';
+import ChevronIcon from '../icons/ChevronIcon';
 import CraftInputRow from './CraftInputRow';
 
 interface CraftSectionProps {
@@ -115,14 +116,46 @@ const CraftSection = ({ materials, calculatorRows, onImportRef }: CraftSectionPr
 
   if (!recipe) return null;
 
+  const isCollapsed = session.sectionCollapsed !== false;
+
+  const toggleCollapsed = () => {
+    setSession((prev) => ({ ...prev, sectionCollapsed: !isCollapsed }));
+  };
+
   return (
     <div className={sectionWrapperClass}>
       <section className={sectionGlassClass}>
         <div className="flex flex-wrap items-center gap-2 pb-1 border-b border-white/10">
-          <h2 className="text-sm font-semibold text-white/90 w-full sm:w-auto">
+          <button
+            type="button"
+            className="btn w-7 h-7 min-w-7 p-0 shrink-0 flex items-center justify-center"
+            aria-label={isCollapsed ? t('craft.expand') : t('craft.collapse')}
+            aria-expanded={!isCollapsed}
+            onClick={toggleCollapsed}
+          >
+            <ChevronIcon className="w-4 h-4" expanded={!isCollapsed} />
+          </button>
+          <h2 className="text-sm font-semibold text-white/90">
             {t('craft.sectionTitle')}
           </h2>
+          {isCollapsed ? (
+            <span className="text-sm text-white/60 truncate">{t(recipe.nameKey)}</span>
+          ) : null}
+          {isCollapsed && profit ? (
+            <span
+              className={`text-sm font-medium ml-auto tabular-nums ${
+                profit.profit >= 0 ? 'text-emerald-400' : 'text-red-400'
+              }`}
+            >
+              {profit.profit >= 0 ? '+' : ''}
+              {formatCraftMoney(profit.profit)} ₽
+            </span>
+          ) : null}
+        </div>
 
+        {!isCollapsed ? (
+          <>
+        <div className="flex flex-wrap items-center gap-2 pb-1 border-b border-white/10 pt-2">
           <DropdownMenu
             ariaLabel={t('craft.selectCraft')}
             className="min-w-[10rem] flex-1 sm:flex-none"
@@ -379,6 +412,8 @@ const CraftSection = ({ materials, calculatorRows, onImportRef }: CraftSectionPr
               {t('craft.sellInputsInstead')}: {formatCraftMoney(profit.sellInputsInstead)} ₽
             </p>
           </div>
+        ) : null}
+          </>
         ) : null}
       </section>
     </div>

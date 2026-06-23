@@ -134,6 +134,8 @@ const en: Translations = {
   'craft.polimery': 'Polymers (5 hooves → 19)',
   'craft.plastikovayaButylka': 'Plastic bottle (1 polymer → 4)',
   'craft.butylkaChistoyVody': 'Clean water bottle (1 bottle → 1)',
+  'craft.collapse': 'Collapse craft section',
+  'craft.expand': 'Expand craft section',
 };
 
 export default en;

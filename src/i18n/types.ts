@@ -131,6 +131,8 @@ export type TranslationKey =
   | 'craft.sellPriceFor'
   | 'craft.polimery'
   | 'craft.plastikovayaButylka'
-  | 'craft.butylkaChistoyVody';
+  | 'craft.butylkaChistoyVody'
+  | 'craft.collapse'
+  | 'craft.expand';
 
 export type Translations = Record<TranslationKey, string>;

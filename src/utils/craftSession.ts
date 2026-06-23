@@ -9,6 +9,7 @@ export const createDefaultCraftSession = (): CraftSession => ({
   efficiencyPercent: 100,
   priceOverrides: {},
   costSourceByInput: {},
+  sectionCollapsed: true,
 });
 
 export const normalizeCraftSession = (raw: unknown): CraftSession => {
@@ -43,5 +44,7 @@ export const normalizeCraftSession = (raw: unknown): CraftSession => {
       data.costSourceByInput && typeof data.costSourceByInput === 'object'
         ? (data.costSourceByInput as CraftSession['costSourceByInput'])
         : {},
+    sectionCollapsed:
+      typeof data.sectionCollapsed === 'boolean' ? data.sectionCollapsed : defaults.sectionCollapsed,
   };
 };

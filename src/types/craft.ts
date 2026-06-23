@@ -36,6 +36,7 @@ export interface CraftSession {
   efficiencyPercent: number;
   priceOverrides: Record<string, number>;
   costSourceByInput: Record<string, CraftCostSource>;
+  sectionCollapsed?: boolean;
 }
 
 export interface CraftCostBreakdownNode {

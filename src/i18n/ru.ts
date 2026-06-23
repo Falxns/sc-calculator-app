@@ -134,6 +134,8 @@ const ru: Translations = {
   'craft.polimery': 'Полимеры (5 копыт → 19)',
   'craft.plastikovayaButylka': 'Пластиковая бутылка (1 полимер → 4)',
   'craft.butylkaChistoyVody': 'Бутылка чистой воды (1 бутылка → 1)',
+  'craft.collapse': 'Свернуть раздел крафта',
+  'craft.expand': 'Развернуть раздел крафта',
 };
 
 export default ru;

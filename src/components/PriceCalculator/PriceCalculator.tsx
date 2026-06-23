@@ -120,14 +120,16 @@ const PriceCalculator = ({
 
   const updateMaterial = useCallback(
     (id: string, materialId: string) => {
+      const material = resolvedMaterials.find((m) => m.id === materialId);
+      const defaultPrice = material?.defaultPrice ?? 0;
       setCalculatorState((prev) => ({
         ...prev,
         calculators: prev.calculators.map((calc) =>
-          calc.id === id ? { ...calc, materialId } : calc
+          calc.id === id ? { ...calc, materialId, price: defaultPrice } : calc
         ),
       }));
     },
-    [setCalculatorState]
+    [resolvedMaterials, setCalculatorState]
   );
 
   const resetQuantity = useCallback(
