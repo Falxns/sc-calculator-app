@@ -1,5 +1,6 @@
 import type { Material, MaterialsState } from '../types';
 import { DEFAULT_MATERIALS } from '../constants/materials';
+import { sanitizeMaterialForStorage } from './iconStore';
 import { createUniqueMaterialId, hasCyrillic, slugify } from './slugify';
 
 export const MATERIAL_ID_REMAP_KEY = 'materialIdRemap';
@@ -32,7 +33,8 @@ export const normalizeMaterials = (
     }
 
     usedIds.add(nextId);
-    normalized.push(nextId === material.id ? material : { ...material, id: nextId });
+    const base = nextId === material.id ? material : { ...material, id: nextId };
+    normalized.push(sanitizeMaterialForStorage(base));
   }
 
   return { materials: normalized, idMap };

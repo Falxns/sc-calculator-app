@@ -6,8 +6,9 @@ import ResetIcon from '../icons/ResetIcon';
 import TrashIcon from '../icons/TrashIcon';
 import DragHandle from '../DragHandle/DragHandle';
 import MaterialSelect from '../MaterialSelect/MaterialSelect';
+import MaterialIcon from '../MaterialIcon/MaterialIcon';
 import type { Calculator, Material } from '../../types';
-import { findMaterial, getMaterialImageSrc } from '../../utils/materialImage';
+import { findMaterial } from '../../utils/materialImage';
 
 interface CalculatorRowProps {
   materials: Material[];
@@ -33,7 +34,6 @@ const CalculatorRow = ({
   const material = findMaterial(materials, materialId);
   const materialName = material?.label ?? materialId;
   const subtotal = price * quantity;
-  const imageSrc = getMaterialImageSrc(material);
 
   const {
     attributes,
@@ -81,8 +81,8 @@ const CalculatorRow = ({
         listeners={listeners}
         attributes={attributes}
       />
-      {imageSrc ? (
-        <img src={imageSrc} alt={materialName} className="w-9 h-9 shrink-0" />
+      {material ? (
+        <MaterialIcon material={material} className="w-9 h-9 shrink-0" placeholderClassName="w-9 h-9 shrink-0 rounded-lg bg-white/10" />
       ) : (
         <span className="w-9 h-9 shrink-0 rounded-lg bg-white/10" aria-hidden />
       )}

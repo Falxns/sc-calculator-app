@@ -1,15 +1,20 @@
+import { sanitizeMaterialForStorage } from './iconStore';
 import { normalizeMaterials } from './materialsNormalize';
 import type { Material } from '../types';
 
-export const EXPORT_VERSION = 1;
+export const EXPORT_VERSION = 2;
+
+type LegacyMaterial = Material & { imageData?: string };
 
 export interface MaterialsExport {
   version: typeof EXPORT_VERSION;
   exportedAt: string;
   materials: Material[];
+  /** Custom icon data URLs keyed by material id (backup only, not stored in localStorage) */
+  icons?: Record<string, string>;
 }
 
-const isMaterial = (value: unknown): value is Material => {
+const isMaterial = (value: unknown): value is LegacyMaterial => {
   if (!value || typeof value !== 'object') return false;
   const m = value as Record<string, unknown>;
   return (
@@ -19,16 +24,18 @@ const isMaterial = (value: unknown): value is Material => {
     m.label.trim().length > 0 &&
     typeof m.defaultPrice === 'number' &&
     !Number.isNaN(m.defaultPrice) &&
-    m.defaultPrice >= 0 &&
-    (m.imgSrc === undefined || typeof m.imgSrc === 'string') &&
-    (m.imageData === undefined || typeof m.imageData === 'string')
+    m.defaultPrice >= 0
   );
 };
 
-export const createMaterialsExport = (materials: Material[]): MaterialsExport => ({
+export const createMaterialsExport = (
+  materials: Material[],
+  icons?: Record<string, string>
+): MaterialsExport => ({
   version: EXPORT_VERSION,
   exportedAt: new Date().toISOString(),
-  materials,
+  materials: materials.map(sanitizeMaterialForStorage),
+  ...(icons && Object.keys(icons).length ? { icons } : {}),
 });
 
 export const parseMaterialsImport = (raw: unknown): Material[] => {
@@ -57,18 +64,36 @@ export const parseMaterialsImport = (raw: unknown): Material[] => {
   }
 
   return normalizeMaterials(
-    list.map((m) => ({
-      id: m.id,
-      label: m.label.trim(),
-      defaultPrice: m.defaultPrice,
-      ...(m.imgSrc ? { imgSrc: m.imgSrc } : {}),
-      ...(m.imageData ? { imageData: m.imageData } : {}),
-    }))
+    list.map((m) => {
+      const hasCustom = m.customIcon || m.imageData;
+      return {
+        id: m.id,
+        label: m.label.trim(),
+        defaultPrice: m.defaultPrice,
+        ...(m.imgSrc ? { imgSrc: m.imgSrc } : {}),
+        ...(hasCustom ? { customIcon: true } : {}),
+      };
+    })
   ).materials;
 };
 
-export const downloadMaterialsJson = (materials: Material[]) => {
-  const payload = createMaterialsExport(materials);
+export const parseMaterialsIconsFromImport = (raw: unknown): Record<string, string> | undefined => {
+  const data = raw as Partial<MaterialsExport> | null;
+  if (!data?.icons || typeof data.icons !== 'object') return undefined;
+
+  const icons: Record<string, string> = {};
+  for (const [id, value] of Object.entries(data.icons)) {
+    if (typeof value === 'string' && value.startsWith('data:')) {
+      icons[id] = value;
+    }
+  }
+  return Object.keys(icons).length ? icons : undefined;
+};
+
+export const downloadMaterialsJson = async (materials: Material[]) => {
+  const { exportIconsAsDataUrls } = await import('./iconStore');
+  const icons = await exportIconsAsDataUrls(materials);
+  const payload = createMaterialsExport(materials, icons);
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -79,13 +104,16 @@ export const downloadMaterialsJson = (materials: Material[]) => {
   URL.revokeObjectURL(url);
 };
 
-export const readMaterialsFromFile = (file: File): Promise<Material[]> =>
+export const readMaterialsFromFile = (file: File): Promise<{ materials: Material[]; icons?: Record<string, string> }> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       try {
         const parsed: unknown = JSON.parse(reader.result as string);
-        resolve(parseMaterialsImport(parsed));
+        resolve({
+          materials: parseMaterialsImport(parsed),
+          icons: parseMaterialsIconsFromImport(parsed),
+        });
       } catch (err) {
         reject(err instanceof Error ? err : new Error('Could not parse JSON file.'));
       }
